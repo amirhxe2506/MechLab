@@ -1,0 +1,10 @@
+{
+  "description": "Easily read and edit markdown files with a user-friendly interface, perfect for writers and developers seeking efficient content management.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
