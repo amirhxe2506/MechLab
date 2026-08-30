@@ -1,0 +1,37 @@
+# MechLab -- local development infrastructure.
+#
+# Phase 1 scope: PostgreSQL only. The Django backend itself is run
+# directly on the host (via `python manage.py runserver`) during
+# development, not containerized yet -- keeps the inner dev loop fast.
+# A `backend` service can be added in a later phase if containerized
+# development becomes worthwhile.
+#
+# Usage:
+#   docker compose up -d db
+#
+# Credentials default to mechlab/mechlab/mechlab, matching
+# backend/.env.example's DATABASE_URL out of the box. Override via a
+# .env file at the repo root only if you need different local
+# credentials.
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: mechlab_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-mechlab}
+      POSTGRES_USER: ${POSTGRES_USER:-mechlab}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-mechlab}
+    ports:
+      - "5432:5432"
+    volumes:
+      - mechlab_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-mechlab} -d ${POSTGRES_DB:-mechlab}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  mechlab_postgres_data:
