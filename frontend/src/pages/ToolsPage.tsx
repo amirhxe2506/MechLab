@@ -76,167 +76,118 @@ const tools = [
 
 export default function ToolsPage() {
   return (
-    <div style={{ maxWidth: 1280, margin: "0 auto", padding: "48px 24px" }}>
+    <div className="max-w-7xl mx-auto py-12 px-6">
       {/* Header */}
-      <div style={{ marginBottom: 48 }}>
-        <div style={{ fontSize: 11, fontFamily: "JetBrains Mono, monospace", color: "#3b82f6", letterSpacing: "0.1em", marginBottom: 10 }}>
+      <div className="mb-12">
+        <div className="text-[11px] font-mono text-blue-500 tracking-widest mb-2.5">
           ENGINEERING TOOLS
         </div>
-        <h1
-          style={{
-            fontFamily: "DM Sans, system-ui, sans-serif",
-            fontSize: "clamp(1.6rem, 3vw, 2.2rem)",
-            fontWeight: 700,
-            color: "#f1f5f9",
-            margin: "0 0 12px",
-            letterSpacing: "-0.03em",
-          }}
-        >
+        <h1 className="font-display text-[clamp(1.6rem,3vw,2.2rem)] font-bold text-slate-100 mb-3 tracking-tight">
           Calculator Suite
         </h1>
-        <p style={{ fontSize: 15, color: "#475569", margin: 0, maxWidth: 560 }}>
+        <p className="text-[15px] text-slate-600 m-0 max-w-xl">
           Interactive engineering calculators with real-time results, unit handling, input validation, and visualizations.
         </p>
       </div>
 
       {/* Info bar */}
-      <div
-        style={{
-          display: "flex",
-          gap: 24,
-          padding: "14px 20px",
-          backgroundColor: "rgba(59,130,246,0.05)",
-          border: "1px solid rgba(59,130,246,0.15)",
-          borderRadius: 8,
-          marginBottom: 32,
-          flexWrap: "wrap",
-        }}
-      >
+      <div className="flex flex-wrap gap-6 py-3.5 px-5 bg-blue-500/5 border border-blue-500/15 rounded-lg mb-8">
         {[
           { label: "Calculators", value: "5" },
           { label: "Unit Systems", value: "SI + Imperial" },
           { label: "Subjects", value: "3" },
           { label: "Visualizations", value: "Charts + SVG" },
         ].map((s) => (
-          <div key={s.label} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 14, fontWeight: 600, color: "#3b82f6" }}>
+          <div key={s.label} className="flex items-center gap-2">
+            <span className="font-mono text-sm font-semibold text-blue-500">
               {s.value}
             </span>
-            <span style={{ fontSize: 13, color: "#475569" }}>{s.label}</span>
+            <span className="text-[13px] text-slate-600">{s.label}</span>
           </div>
         ))}
       </div>
 
       {/* Tools grid */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <div className="flex flex-col gap-4">
         {tools.map((tool) => (
           <div
             key={tool.id}
-            style={{
-              backgroundColor: "#0c1528",
-              border: "1px solid rgba(255,255,255,0.07)",
-              borderRadius: 12,
-              overflow: "hidden",
-              opacity: tool.comingSoon ? 0.6 : 1,
-            }}
+            className={`bg-[#0c1528] border border-white/5 rounded-xl overflow-hidden ${
+              tool.comingSoon ? "opacity-60" : "card-interactive"
+            }`}
           >
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 260px", gap: 0 }}>
+            <div className="grid grid-cols-1 md:grid-cols-[1fr_260px] gap-0">
               {/* Left: main info */}
-              <div style={{ padding: 28, borderRight: "1px solid rgba(255,255,255,0.05)" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
+              <div className="p-7 border-b md:border-b-0 md:border-r border-white/5">
+                <div className="flex items-center gap-3 mb-3.5">
                   <span
+                    className="text-[10px] font-semibold py-0.5 px-2 rounded font-mono tracking-wider"
                     style={{
-                      fontSize: 10,
-                      fontWeight: 600,
-                      padding: "2px 8px",
-                      borderRadius: 4,
-                      fontFamily: "JetBrains Mono, monospace",
                       backgroundColor: `${tool.badgeColor}12`,
                       color: tool.badgeColor,
                       border: `1px solid ${tool.badgeColor}25`,
-                      letterSpacing: "0.04em",
                     }}
                   >
                     {tool.badge}
                   </span>
-                  <span style={{ fontSize: 12, color: "#334155" }}>{tool.subject}</span>
+                  <span className="text-xs text-slate-600">{tool.subject}</span>
                   {tool.comingSoon && (
-                    <span
-                      style={{
-                        fontSize: 10,
-                        padding: "2px 7px",
-                        borderRadius: 4,
-                        backgroundColor: "rgba(255,255,255,0.04)",
-                        border: "1px solid rgba(255,255,255,0.08)",
-                        color: "#475569",
-                        fontFamily: "JetBrains Mono, monospace",
-                      }}
-                    >
+                    <span className="text-[10px] py-0.5 px-1.5 rounded bg-white/5 border border-white/10 text-slate-500 font-mono">
                       COMING SOON
                     </span>
                   )}
                 </div>
 
-                <h2
-                  style={{
-                    fontFamily: "DM Sans, system-ui, sans-serif",
-                    fontSize: 20,
-                    fontWeight: 700,
-                    color: "#f1f5f9",
-                    margin: "0 0 8px",
-                    letterSpacing: "-0.02em",
-                  }}
-                >
+                <h2 className="font-display text-xl font-bold text-slate-100 mb-2 tracking-tight">
                   {tool.title}
                 </h2>
 
                 {/* Formula */}
-                <div
-                  style={{
-                    fontFamily: "JetBrains Mono, monospace",
-                    fontSize: 13,
-                    color: "#06b6d4",
-                    backgroundColor: "rgba(6,182,212,0.05)",
-                    border: "1px solid rgba(6,182,212,0.1)",
-                    borderRadius: 6,
-                    padding: "7px 12px",
-                    marginBottom: 14,
-                    display: "inline-block",
-                  }}
-                >
+                <div className="font-mono text-[13px] text-cyan-500 bg-cyan-500/5 border border-cyan-500/10 rounded-md py-1.5 px-3 mb-3.5 inline-block">
                   {tool.formula}
                 </div>
 
-                <p style={{ fontSize: 14, color: "#475569", lineHeight: 1.65, margin: "0 0 20px" }}>
+                <p className="text-sm text-slate-500 leading-relaxed m-0 mb-5">
                   {tool.description}
                 </p>
 
-                <div style={{ display: "flex", gap: 16 }}>
+                <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
                   {/* Inputs */}
-                  <div>
-                    <div style={{ fontSize: 10, fontFamily: "JetBrains Mono, monospace", color: "#334155", letterSpacing: "0.06em", marginBottom: 8 }}>
+                  <div className="flex-1">
+                    <div className="text-[10px] font-mono text-slate-600 tracking-wider mb-2">
                       INPUTS
                     </div>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                    <div className="flex flex-col gap-1">
                       {tool.inputs.map((inp) => (
-                        <div key={inp} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#64748b" }}>
-                          <span style={{ color: "#1e3a5f" }}>→</span> {inp}
+                        <div key={inp} className="flex items-center gap-1.5 text-xs text-slate-500">
+                          <span className="text-cyan-500 flex items-center">
+                            <svg width="14" height="14" viewBox="0 0 14 14">
+                              <circle cx="7" cy="7" r="5.5" stroke="currentColor" strokeWidth="1.2" fill="none"/>
+                              <line x1="4.5" y1="4.5" x2="9.5" y2="9.5" stroke="currentColor" strokeWidth="1.2"/>
+                              <line x1="9.5" y1="4.5" x2="4.5" y2="9.5" stroke="currentColor" strokeWidth="1.2"/>
+                            </svg>
+                          </span> {inp}
                         </div>
                       ))}
                     </div>
                   </div>
 
-                  <div style={{ width: 1, backgroundColor: "rgba(255,255,255,0.05)" }} />
+                  <div className="hidden sm:block w-px bg-white/5" />
 
                   {/* Outputs */}
-                  <div>
-                    <div style={{ fontSize: 10, fontFamily: "JetBrains Mono, monospace", color: "#334155", letterSpacing: "0.06em", marginBottom: 8 }}>
+                  <div className="flex-1">
+                    <div className="text-[10px] font-mono text-slate-600 tracking-wider mb-2">
                       OUTPUTS
                     </div>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                    <div className="flex flex-col gap-1">
                       {tool.outputs.map((out) => (
-                        <div key={out} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#64748b" }}>
-                          <span style={{ color: "#22c55e" }}>←</span> {out}
+                        <div key={out} className="flex items-center gap-1.5 text-xs text-slate-500">
+                          <span className="text-green-500 flex items-center">
+                            <svg width="14" height="14" viewBox="0 0 14 14">
+                              <circle cx="7" cy="7" r="5.5" stroke="currentColor" strokeWidth="1.2" fill="none"/>
+                              <circle cx="7" cy="7" r="2" fill="currentColor"/>
+                            </svg>
+                          </span> {out}
                         </div>
                       ))}
                     </div>
@@ -245,21 +196,13 @@ export default function ToolsPage() {
               </div>
 
               {/* Right: features + CTA */}
-              <div
-                style={{
-                  padding: 24,
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "space-between",
-                  backgroundColor: "#060b18",
-                }}
-              >
+              <div className="p-6 flex flex-col justify-between bg-[#060b18]">
                 <div>
-                  <div style={{ fontSize: 10, fontFamily: "JetBrains Mono, monospace", color: "#334155", letterSpacing: "0.06em", marginBottom: 12 }}>
+                  <div className="text-[10px] font-mono text-slate-600 tracking-wider mb-3">
                     FEATURES
                   </div>
                   {tool.features.map((f) => (
-                    <div key={f} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8, fontSize: 13, color: "#475569" }}>
+                    <div key={f} className="flex items-center gap-2 mb-2 text-[13px] text-slate-500">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5">
                         <polyline points="20 6 9 17 4 12" />
                       </svg>
@@ -270,22 +213,11 @@ export default function ToolsPage() {
 
                 <Link
                   to={tool.href}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 8,
-                    padding: "11px 20px",
-                    backgroundColor: tool.comingSoon ? "rgba(255,255,255,0.04)" : "#3b82f6",
-                    color: tool.comingSoon ? "#334155" : "#fff",
-                    borderRadius: 8,
-                    fontSize: 14,
-                    fontWeight: 600,
-                    textDecoration: "none",
-                    marginTop: 20,
-                    pointerEvents: tool.comingSoon ? "none" : "auto",
-                    letterSpacing: "-0.01em",
-                  }}
+                  className={`flex items-center justify-center gap-2 py-2.5 px-5 rounded-lg text-sm font-semibold no-underline mt-5 tracking-tight focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+                    tool.comingSoon
+                      ? "bg-white/5 text-slate-600 pointer-events-none"
+                      : "btn-primary bg-blue-500 text-white pointer-events-auto"
+                  }`}
                 >
                   {tool.comingSoon ? "Coming Soon" : "Open Calculator →"}
                 </Link>

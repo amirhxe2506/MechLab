@@ -15,56 +15,31 @@ export default function Navigation() {
     location.pathname === href || location.pathname.startsWith(href + "/");
 
   return (
-    <nav
-      style={{
-        position: "sticky",
-        top: 0,
-        zIndex: 50,
-        backgroundColor: "rgba(6, 11, 24, 0.92)",
-        borderBottom: "1px solid rgba(255,255,255,0.06)",
-        backdropFilter: "blur(16px)",
-      }}
-    >
-      <div style={{ maxWidth: 1280, margin: "0 auto", padding: "0 24px" }}>
-        <div style={{ display: "flex", alignItems: "center", height: 60, gap: 8 }}>
+    <nav className="sticky top-0 z-50 bg-[#060b18]/92 border-b border-white/5 backdrop-blur-md">
+      <div className="max-w-7xl mx-auto px-6">
+        <div className="flex items-center h-[60px] gap-2">
           {/* Logo */}
           <Link
             to="/"
-            style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none", flexShrink: 0 }}
+            className="flex items-center gap-2.5 no-underline shrink-0 group focus-visible:ring-2 focus-visible:ring-blue-500 rounded focus:outline-none"
           >
             <HexLogo />
-            <span
-              style={{
-                fontFamily: "DM Sans, system-ui, sans-serif",
-                fontWeight: 700,
-                fontSize: 18,
-                color: "#e2e8f0",
-                letterSpacing: "-0.025em",
-              }}
-            >
-              Mech<span style={{ color: "#3b82f6" }}>Lab</span>
+            <span className="font-display font-bold text-[18px] text-slate-200 tracking-tight group-hover:text-white transition-colors">
+              Mech<span className="text-blue-500 group-hover:text-blue-400 transition-colors">Lab</span>
             </span>
           </Link>
 
           {/* Desktop nav */}
-          <div style={{ display: "flex", gap: 2, marginLeft: 24 }}>
+          <div className="hidden md:flex gap-0.5 ml-6">
             {navItems.map((item) => (
               <Link
                 key={item.href}
                 to={item.href}
-                style={{
-                  padding: "6px 14px",
-                  borderRadius: 6,
-                  fontSize: 14,
-                  fontWeight: 500,
-                  color: isActive(item.href) ? "#e2e8f0" : "#64748b",
-                  backgroundColor: isActive(item.href) ? "rgba(59,130,246,0.1)" : "transparent",
-                  textDecoration: "none",
-                  transition: "all 0.15s ease",
-                  borderBottom: isActive(item.href)
-                    ? "1px solid rgba(59,130,246,0.5)"
-                    : "1px solid transparent",
-                }}
+                className={`px-3.5 py-1.5 rounded-md text-sm font-medium no-underline transition-all duration-150 border-b focus-visible:ring-2 focus-visible:ring-blue-500 focus:outline-none ${
+                  isActive(item.href)
+                    ? "text-slate-200 bg-blue-500/10 border-blue-500/50"
+                    : "text-slate-500 hover:text-slate-300 hover:bg-white/5 border-transparent"
+                }`}
               >
                 {item.label}
               </Link>
@@ -72,43 +47,18 @@ export default function Navigation() {
           </div>
 
           {/* Spacer */}
-          <div style={{ flex: 1 }} />
+          <div className="flex-1" />
 
           {/* Search hint */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              padding: "6px 12px",
-              backgroundColor: "rgba(255,255,255,0.04)",
-              border: "1px solid rgba(255,255,255,0.07)",
-              borderRadius: 6,
-              color: "#475569",
-              fontSize: 13,
-              cursor: "pointer",
-            }}
-          >
+          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/10 rounded-md text-slate-500 text-[13px] cursor-pointer hover:bg-white/10 hover:text-slate-300 transition-colors">
             <SearchIcon />
-            <span style={{ display: "none" }} className="sm:inline">
-              Search...
-            </span>
+            <span>Search...</span>
           </div>
 
           {/* CTA */}
           <Link
             to="/tools"
-            style={{
-              padding: "7px 18px",
-              backgroundColor: "#3b82f6",
-              color: "#ffffff",
-              borderRadius: 6,
-              fontSize: 13,
-              fontWeight: 600,
-              textDecoration: "none",
-              flexShrink: 0,
-              letterSpacing: "-0.01em",
-            }}
+            className="btn-primary px-4 py-[7px] bg-blue-500 text-white rounded-md text-[13px] font-semibold no-underline shrink-0 tracking-tight focus-visible:ring-2 focus-visible:ring-blue-400 focus:outline-none ml-2"
           >
             Open Tools
           </Link>
@@ -116,15 +66,7 @@ export default function Navigation() {
           {/* Mobile hamburger */}
           <button
             onClick={() => setOpen((v) => !v)}
-            style={{
-              display: "none",
-              padding: 6,
-              background: "none",
-              border: "none",
-              color: "#64748b",
-              cursor: "pointer",
-              marginLeft: 4,
-            }}
+            className="md:hidden p-1.5 bg-transparent border-none text-slate-500 hover:text-slate-300 cursor-pointer ml-1 focus-visible:ring-2 focus-visible:ring-blue-500 rounded focus:outline-none"
             aria-label="Toggle menu"
           >
             <MenuIcon />
@@ -134,27 +76,15 @@ export default function Navigation() {
 
       {/* Mobile dropdown */}
       {open && (
-        <div
-          style={{
-            borderTop: "1px solid rgba(255,255,255,0.06)",
-            backgroundColor: "#060b18",
-            padding: "12px 24px 20px",
-          }}
-        >
+        <div className="md:hidden border-t border-white/5 bg-[#060b18] px-6 py-3 pb-5">
           {navItems.map((item) => (
             <Link
               key={item.href}
               to={item.href}
               onClick={() => setOpen(false)}
-              style={{
-                display: "block",
-                padding: "10px 0",
-                fontSize: 15,
-                fontWeight: 500,
-                color: isActive(item.href) ? "#3b82f6" : "#94a3b8",
-                textDecoration: "none",
-                borderBottom: "1px solid rgba(255,255,255,0.04)",
-              }}
+              className={`block py-2.5 text-[15px] font-medium no-underline border-b border-white/5 transition-colors focus-visible:ring-2 focus-visible:ring-blue-500 focus:outline-none ${
+                isActive(item.href) ? "text-blue-500" : "text-slate-400 hover:text-slate-200"
+              }`}
             >
               {item.label}
             </Link>
@@ -167,7 +97,7 @@ export default function Navigation() {
 
 function HexLogo() {
   return (
-    <svg width="30" height="30" viewBox="0 0 30 30" fill="none">
+    <svg width="30" height="30" viewBox="0 0 30 30" fill="none" className="transition-transform group-hover:scale-105 duration-300">
       <rect width="30" height="30" rx="7" fill="rgba(59,130,246,0.12)" />
       <polygon
         points="15,4 25,9.5 25,20.5 15,26 5,20.5 5,9.5"

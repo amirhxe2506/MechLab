@@ -14,18 +14,29 @@
   --color-card: #0c1528;
   --color-card-foreground: #cbd5e1;
   --color-primary: #3b82f6;
+  --color-primary-hover: #4c93f7;
   --color-primary-foreground: #ffffff;
   --color-secondary: #111e35;
   --color-secondary-foreground: #94a3b8;
   --color-muted: #0f1825;
   --color-muted-foreground: #475569;
   --color-accent: #06b6d4;
+  --color-accent-hover: #22d3ee;
   --color-accent-foreground: #ffffff;
   --color-border: #1a2744;
   --color-ring: #3b82f6;
   --color-success: #22c55e;
   --color-warning: #f59e0b;
   --color-danger: #ef4444;
+
+  /* Glow shadows */
+  --shadow-glow-blue: 0 0 20px rgba(59, 130, 246, 0.35);
+  --shadow-glow-cyan: 0 0 20px rgba(6, 182, 212, 0.3);
+  --shadow-glow-amber: 0 0 20px rgba(245, 158, 11, 0.3);
+
+  /* Gradients */
+  --gradient-section-alt: linear-gradient(180deg, #0c1528 0%, #0a1222 100%);
+  --gradient-hero-glow: radial-gradient(ellipse at center, rgba(59, 130, 246, 0.15) 0%, transparent 70%);
 }
 
 *,
@@ -88,4 +99,31 @@ input[type="number"]::-webkit-outer-spin-button {
   color: #06b6d4;
   font-size: 1.25rem;
   letter-spacing: 0.02em;
+}
+
+/* Button & Card Utilities */
+.btn-primary {
+  transition: all 0.2s ease;
+}
+.btn-primary:hover {
+  background-color: var(--color-primary-hover) !important;
+  box-shadow: var(--shadow-glow-blue) !important;
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  transition: all 0.2s ease;
+}
+.btn-secondary:hover {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.card-interactive {
+  transition: all 0.2s ease;
+}
+.card-interactive:hover {
+  transform: scale(1.01) translateY(-2px);
+  border-color: rgba(59, 130, 246, 0.4) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2), 0 0 15px rgba(59, 130, 246, 0.15) !important;
 }

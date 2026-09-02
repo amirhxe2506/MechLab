@@ -80,36 +80,27 @@ export default function StressStrainPage() {
   };
 
   return (
-    <div style={{ maxWidth: 1280, margin: "0 auto", padding: "48px 24px" }}>
+    <div className="max-w-7xl mx-auto py-12 px-6">
       {/* Breadcrumb */}
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 32, fontSize: 13, color: "#334155" }}>
-        <Link to="/tools" style={{ color: "#475569", textDecoration: "none" }}>Tools</Link>
+      <div className="flex items-center gap-2 mb-8 text-[13px] text-slate-600">
+        <Link to="/tools" className="text-slate-500 hover:text-slate-400 no-underline transition-colors">Tools</Link>
         <span>→</span>
-        <span style={{ color: "#64748b" }}>Stress & Strain Calculator</span>
+        <span className="text-slate-400">Stress & Strain Calculator</span>
       </div>
 
       {/* Page header */}
-      <div style={{ marginBottom: 36 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
-          <div style={{ fontSize: 11, fontFamily: "JetBrains Mono, monospace", color: "#f59e0b", letterSpacing: "0.08em" }}>
+      <div className="mb-9">
+        <div className="flex items-center gap-3 mb-2.5">
+          <div className="text-[11px] font-mono text-amber-500 tracking-[0.08em]">
             MECHANICS
           </div>
-          <div style={{ width: 1, height: 12, backgroundColor: "rgba(255,255,255,0.1)" }} />
-          <div style={{ fontSize: 11, color: "#334155" }}>Strength of Materials</div>
+          <div className="w-px h-3 bg-white/10" />
+          <div className="text-[11px] text-slate-500">Strength of Materials</div>
         </div>
-        <h1
-          style={{
-            fontFamily: "DM Sans, system-ui, sans-serif",
-            fontSize: "clamp(1.5rem, 3vw, 2rem)",
-            fontWeight: 700,
-            color: "#f1f5f9",
-            margin: "0 0 10px",
-            letterSpacing: "-0.03em",
-          }}
-        >
+        <h1 className="font-display text-[clamp(1.5rem,3vw,2rem)] font-bold text-slate-100 mb-2.5 tracking-tight">
           Stress &amp; Strain Calculator
         </h1>
-        <p style={{ fontSize: 15, color: "#475569", margin: 0 }}>
+        <p className="text-[15px] text-slate-500 m-0">
           Compute normal stress, axial strain, and deformation for a prismatic bar under axial loading.
         </p>
       </div>
@@ -117,22 +108,15 @@ export default function StressStrainPage() {
       {/* Concept panel */}
       <ConceptPanel />
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, marginTop: 28 }}>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-7">
         {/* Input panel */}
-        <div
-          style={{
-            backgroundColor: "#0c1528",
-            border: "1px solid rgba(255,255,255,0.07)",
-            borderRadius: 12,
-            padding: 28,
-          }}
-        >
+        <div className="bg-[#0c1528] border border-white/5 rounded-xl p-7">
           {/* Unit system toggle */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
-            <div style={{ fontSize: 12, fontFamily: "JetBrains Mono, monospace", color: "#334155", letterSpacing: "0.06em" }}>
+          <div className="flex items-center justify-between mb-6">
+            <div className="text-xs font-mono text-slate-600 tracking-wider">
               INPUT PARAMETERS
             </div>
-            <div style={{ display: "flex", backgroundColor: "#060b18", borderRadius: 6, padding: 2, border: "1px solid rgba(255,255,255,0.06)" }}>
+            <div className="flex bg-[#060b18] rounded-md p-0.5 border border-white/5">
               {(["SI", "Imperial"] as UnitSystem[]).map((sys) => (
                 <button
                   key={sys}
@@ -141,17 +125,11 @@ export default function StressStrainPage() {
                     setInputs(exampleValues[sys]);
                     setErrors({});
                   }}
-                  style={{
-                    padding: "5px 14px",
-                    borderRadius: 4,
-                    fontSize: 12,
-                    fontWeight: 600,
-                    border: "none",
-                    cursor: "pointer",
-                    backgroundColor: units === sys ? "#3b82f6" : "transparent",
-                    color: units === sys ? "#fff" : "#475569",
-                    transition: "all 0.15s ease",
-                  }}
+                  className={`py-1 px-3.5 rounded text-xs font-semibold border-none cursor-pointer transition-all duration-150 focus:outline-none ${
+                    units === sys
+                      ? "bg-blue-500 text-white shadow-sm"
+                      : "bg-transparent text-slate-500 hover:text-slate-300"
+                  }`}
                 >
                   {sys}
                 </button>
@@ -159,7 +137,7 @@ export default function StressStrainPage() {
             </div>
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <div className="flex flex-col gap-4">
             <InputField
               label="Applied Force"
               symbol="F"
@@ -205,43 +183,21 @@ export default function StressStrainPage() {
 
           <button
             onClick={loadExample}
-            style={{
-              marginTop: 20,
-              padding: "7px 16px",
-              fontSize: 12,
-              backgroundColor: "rgba(255,255,255,0.04)",
-              border: "1px solid rgba(255,255,255,0.08)",
-              borderRadius: 6,
-              color: "#64748b",
-              cursor: "pointer",
-            }}
+            className="mt-5 py-1.5 px-4 text-xs bg-white/5 border border-white/10 rounded-md text-slate-500 hover:text-slate-300 hover:bg-white/10 cursor-pointer transition-colors focus:outline-none"
           >
             Load Example Values
           </button>
         </div>
 
         {/* Results panel */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        <div className="flex flex-col gap-4">
           {results ? (
             <>
               <ResultsPanel results={results} units={u} unitSystem={units} />
               <StressBarChart stress={results.stress} />
             </>
           ) : (
-            <div
-              style={{
-                backgroundColor: "#0c1528",
-                border: "1px solid rgba(255,255,255,0.07)",
-                borderRadius: 12,
-                padding: 40,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "#334155",
-                fontSize: 14,
-                textAlign: "center",
-              }}
-            >
+            <div className="bg-[#0c1528] border border-white/5 rounded-xl p-10 flex items-center justify-center text-slate-600 text-sm text-center h-full min-h-[200px]">
               Enter valid parameters to compute results.
             </div>
           )}
@@ -249,11 +205,11 @@ export default function StressStrainPage() {
       </div>
 
       {/* Learn more */}
-      <div style={{ marginTop: 28, padding: "16px 20px", backgroundColor: "#0c1528", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 8, display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
-        <span style={{ fontSize: 13, color: "#475569" }}>Related:</span>
-        <Link to="/formulas" style={{ fontSize: 13, color: "#3b82f6", textDecoration: "none" }}>Formula Library</Link>
-        <Link to="/tools/mohrs-circle" style={{ fontSize: 13, color: "#3b82f6", textDecoration: "none" }}>Mohr's Circle →</Link>
-        <Link to="/learn" style={{ fontSize: 13, color: "#3b82f6", textDecoration: "none" }}>Strength of Materials Course →</Link>
+      <div className="mt-7 py-4 px-5 bg-[#0c1528] border border-white/5 rounded-lg flex items-center gap-4 flex-wrap">
+        <span className="text-[13px] text-slate-500">Related:</span>
+        <Link to="/formulas" className="text-[13px] text-blue-500 hover:text-blue-400 no-underline transition-colors">Formula Library</Link>
+        <Link to="/tools/mohrs-circle" className="text-[13px] text-blue-500 hover:text-blue-400 no-underline transition-colors">Mohr's Circle →</Link>
+        <Link to="/learn" className="text-[13px] text-blue-500 hover:text-blue-400 no-underline transition-colors">Strength of Materials Course →</Link>
       </div>
     </div>
   );
@@ -265,51 +221,42 @@ function ConceptPanel() {
   const [open, setOpen] = useState(false);
 
   return (
-    <div
-      style={{
-        backgroundColor: "#0c1528",
-        border: "1px solid rgba(255,255,255,0.07)",
-        borderRadius: 10,
-        overflow: "hidden",
-      }}
-    >
+    <div className="bg-[#0c1528] border border-white/5 rounded-xl overflow-hidden transition-colors duration-200">
       <button
         onClick={() => setOpen((v) => !v)}
-        style={{
-          width: "100%",
-          textAlign: "left",
-          padding: "14px 20px",
-          background: "none",
-          border: "none",
-          cursor: "pointer",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}
+        className="w-full text-left py-3.5 px-5 bg-transparent border-none cursor-pointer flex items-center justify-between hover:bg-white/5 transition-colors focus:outline-none"
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <span style={{ fontSize: 14, fontWeight: 600, color: "#e2e8f0", fontFamily: "DM Sans, system-ui, sans-serif" }}>
+        <div className="flex items-center gap-2.5">
+          <span className="text-sm font-semibold text-slate-200 font-display">
             Concept &amp; Governing Equations
           </span>
         </div>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#475569" strokeWidth="2" style={{ transform: open ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }}>
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="#475569"
+          strokeWidth="2"
+          className={`transition-transform duration-200 ${open ? "rotate-180" : "rotate-0"}`}
+        >
           <path d="M6 9l6 6 6-6" />
         </svg>
       </button>
       {open && (
-        <div style={{ borderTop: "1px solid rgba(255,255,255,0.05)", padding: 20 }}>
-          <p style={{ fontSize: 14, color: "#64748b", lineHeight: 1.7, margin: "0 0 16px" }}>
+        <div className="border-t border-white/5 p-5 bg-[#060b18]/50">
+          <p className="text-sm text-slate-500 leading-relaxed m-0 mb-4 max-w-3xl">
             When an axial force is applied to a structural member, internal stresses are developed. For a member
             with uniform cross-section, these stresses are uniformly distributed.
           </p>
-          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+          <div className="flex gap-3 flex-wrap">
             {["σ = F / A", "ε = σ / E", "δ = ε · L = FL / AE"].map((eq) => (
-              <div key={eq} className="formula-display" style={{ padding: "8px 16px", fontSize: 14 }}>
+              <div key={eq} className="py-2 px-4 bg-[#0c1528] border border-white/5 rounded-md font-mono text-sm text-cyan-500">
                 {eq}
               </div>
             ))}
           </div>
-          <div style={{ marginTop: 16, display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 10 }}>
+          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
             {[
               { sym: "σ", desc: "Normal Stress [Pa]" },
               { sym: "ε", desc: "Axial Strain [dimensionless]" },
@@ -319,9 +266,9 @@ function ConceptPanel() {
               { sym: "E", desc: "Modulus of Elasticity [Pa]" },
               { sym: "L", desc: "Original Length [m]" },
             ].map((v) => (
-              <div key={v.sym} style={{ display: "flex", gap: 10, alignItems: "baseline", fontSize: 13 }}>
-                <span style={{ fontFamily: "JetBrains Mono, monospace", color: "#06b6d4", minWidth: 20 }}>{v.sym}</span>
-                <span style={{ color: "#475569" }}>{v.desc}</span>
+              <div key={v.sym} className="flex gap-2.5 items-baseline text-[13px]">
+                <span className="font-mono text-cyan-500 min-w-[20px]">{v.sym}</span>
+                <span className="text-slate-500">{v.desc}</span>
               </div>
             ))}
           </div>
@@ -356,21 +303,14 @@ function InputField({
 }) {
   return (
     <div>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-        <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 13, color: "#06b6d4" }}>{symbol}</span>
-        <span style={{ fontSize: 13, color: "#64748b" }}>{label}</span>
+      <div className="flex items-center gap-2 mb-1.5">
+        <span className="font-mono text-[13px] text-cyan-500">{symbol}</span>
+        <span className="text-[13px] text-slate-500">{label}</span>
       </div>
       <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 0,
-          border: `1px solid ${error ? "#ef4444" : "rgba(255,255,255,0.08)"}`,
-          borderRadius: 8,
-          overflow: "hidden",
-          backgroundColor: "#060b18",
-          transition: "border-color 0.15s ease",
-        }}
+        className={`flex items-stretch border rounded-lg overflow-hidden bg-[#060b18] transition-colors focus-within:ring-1 focus-within:ring-cyan-500/50 ${
+          error ? "border-red-500/50" : "border-white/10"
+        }`}
       >
         <input
           type="number"
@@ -378,33 +318,14 @@ function InputField({
           onChange={onChange}
           onBlur={onBlur}
           placeholder={placeholder}
-          style={{
-            flex: 1,
-            padding: "10px 14px",
-            background: "none",
-            border: "none",
-            color: "#e2e8f0",
-            fontSize: 14,
-            fontFamily: "JetBrains Mono, monospace",
-            outline: "none",
-          }}
+          className="flex-1 py-2.5 px-3.5 bg-transparent border-none text-slate-200 text-sm font-mono outline-none"
         />
-        <div
-          style={{
-            padding: "10px 14px",
-            borderLeft: "1px solid rgba(255,255,255,0.06)",
-            fontSize: 12,
-            fontFamily: "JetBrains Mono, monospace",
-            color: "#334155",
-            backgroundColor: "rgba(255,255,255,0.02)",
-            whiteSpace: "nowrap",
-          }}
-        >
+        <div className="py-2.5 px-3.5 border-l border-white/5 text-xs font-mono text-slate-500 bg-white/5 whitespace-nowrap flex items-center">
           {unit}
         </div>
       </div>
-      {error && <div style={{ fontSize: 12, color: "#ef4444", marginTop: 4 }}>{error}</div>}
-      {note && !error && <div style={{ fontSize: 11, color: "#334155", marginTop: 4 }}>{note}</div>}
+      {error && <div className="text-xs text-red-500 mt-1">{error}</div>}
+      {note && !error && <div className="text-[11px] text-slate-600 mt-1">{note}</div>}
     </div>
   );
 }
@@ -428,7 +349,8 @@ function ResultsPanel({
       unit: unitSystem === "SI" ? "MPa" : "psi",
       raw: fmt(results.stress),
       rawUnit: units.stress,
-      color: "#f59e0b",
+      color: "border-l-amber-500",
+      symColor: "text-amber-500",
     },
     {
       label: "Axial Strain",
@@ -437,7 +359,8 @@ function ResultsPanel({
       unit: "—",
       raw: results.strain.toExponential(4),
       rawUnit: "dimensionless",
-      color: "#3b82f6",
+      color: "border-l-blue-500",
+      symColor: "text-blue-500",
     },
     {
       label: "Deformation",
@@ -446,43 +369,31 @@ function ResultsPanel({
       unit: units.deformation,
       raw: fmt(results.deformation, 6),
       rawUnit: units.deformation,
-      color: "#22c55e",
+      color: "border-l-green-500",
+      symColor: "text-green-500",
     },
   ];
 
   return (
-    <div
-      style={{
-        backgroundColor: "#0c1528",
-        border: "1px solid rgba(255,255,255,0.07)",
-        borderRadius: 12,
-        padding: 28,
-      }}
-    >
-      <div style={{ fontSize: 12, fontFamily: "JetBrains Mono, monospace", color: "#334155", letterSpacing: "0.06em", marginBottom: 20 }}>
+    <div className="bg-[#0c1528] border border-white/5 rounded-xl p-7">
+      <div className="text-xs font-mono text-slate-600 tracking-wider mb-5">
         RESULTS
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div className="flex flex-col gap-3">
         {rows.map((r) => (
           <div
             key={r.symbol}
-            style={{
-              backgroundColor: "#060b18",
-              border: "1px solid rgba(255,255,255,0.05)",
-              borderLeft: `3px solid ${r.color}`,
-              borderRadius: "0 8px 8px 0",
-              padding: "14px 16px",
-            }}
+            className={`bg-[#060b18] border border-white/5 border-l-[3px] rounded-r-lg p-3.5 ${r.color}`}
           >
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 15, color: r.color }}>{r.symbol}</span>
-                <span style={{ fontSize: 13, color: "#64748b" }}>{r.label}</span>
+            <div className="flex items-center justify-between mb-1.5">
+              <div className="flex items-center gap-2">
+                <span className={`font-mono text-[15px] ${r.symColor}`}>{r.symbol}</span>
+                <span className="text-[13px] text-slate-500">{r.label}</span>
               </div>
-              <div style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 18, fontWeight: 700, color: "#e2e8f0" }}>
+              <div className="font-mono text-lg font-bold text-slate-200">
                 {r.value}
-                <span style={{ fontSize: 12, color: "#334155", marginLeft: 6, fontWeight: 400 }}>{r.unit}</span>
+                <span className="text-xs text-slate-500 ml-1.5 font-normal">{r.unit}</span>
               </div>
             </div>
           </div>
@@ -490,9 +401,9 @@ function ResultsPanel({
       </div>
 
       {/* Validation note */}
-      <div style={{ marginTop: 16, display: "flex", alignItems: "center", gap: 8 }}>
-        <div style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: "#22c55e" }} />
-        <span style={{ fontSize: 12, color: "#22c55e" }}>All inputs valid — results computed</span>
+      <div className="mt-4 flex items-center gap-2">
+        <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
+        <span className="text-xs text-green-500">All inputs valid — results computed</span>
       </div>
     </div>
   );
@@ -503,21 +414,14 @@ function ResultsPanel({
 function StressBarChart({ stress }: { stress: number }) {
   const MPa = stress / 1e6;
   const levels = [
-    { label: "Aluminum", yield: 270, color: "#a78bfa" },
-    { label: "Steel (mild)", yield: 250, color: "#3b82f6" },
-    { label: "Steel (high)", yield: 690, color: "#06b6d4" },
+    { label: "Aluminum", yield: 270, color: "bg-purple-500" },
+    { label: "Steel (mild)", yield: 250, color: "bg-blue-500" },
+    { label: "Steel (high)", yield: 690, color: "bg-cyan-500" },
   ];
 
   return (
-    <div
-      style={{
-        backgroundColor: "#0c1528",
-        border: "1px solid rgba(255,255,255,0.07)",
-        borderRadius: 12,
-        padding: 24,
-      }}
-    >
-      <div style={{ fontSize: 12, fontFamily: "JetBrains Mono, monospace", color: "#334155", letterSpacing: "0.06em", marginBottom: 16 }}>
+    <div className="bg-[#0c1528] border border-white/5 rounded-xl p-6">
+      <div className="text-xs font-mono text-slate-600 tracking-wider mb-4">
         YIELD STRENGTH COMPARISON (MPa)
       </div>
       {levels.map((mat) => {
@@ -525,44 +429,35 @@ function StressBarChart({ stress }: { stress: number }) {
         const stressRatio = Math.min(Math.abs(MPa) / mat.yield, 1.5);
         const overYield = Math.abs(MPa) > mat.yield;
         return (
-          <div key={mat.label} style={{ marginBottom: 14 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "#475569", marginBottom: 4 }}>
+          <div key={mat.label} className="mb-3.5">
+            <div className="flex justify-between text-xs text-slate-500 mb-1">
               <span>{mat.label}</span>
-              <span style={{ fontFamily: "JetBrains Mono, monospace", color: overYield ? "#ef4444" : "#64748b" }}>
+              <span className={`font-mono ${overYield ? "text-red-500" : "text-slate-500"}`}>
                 σ_y = {mat.yield} MPa {overYield ? "⚠ EXCEEDS YIELD" : ""}
               </span>
             </div>
-            <div style={{ position: "relative", height: 8, backgroundColor: "#060b18", borderRadius: 4, overflow: "hidden" }}>
+            <div className="relative h-2 bg-[#060b18] rounded-full overflow-hidden">
               <div
-                style={{
-                  position: "absolute",
-                  left: 0,
-                  top: 0,
-                  height: "100%",
-                  width: `${ratio * 100}%`,
-                  backgroundColor: overYield ? "#ef4444" : mat.color,
-                  borderRadius: 4,
-                  transition: "width 0.4s ease",
-                  opacity: 0.85,
-                }}
+                className={`absolute left-0 top-0 h-full rounded-full transition-all duration-400 ease-out opacity-85 ${
+                  overYield ? "bg-red-500" : mat.color
+                }`}
+                style={{ width: `${ratio * 100}%` }}
               />
               {/* Current stress marker */}
               <div
+                className="absolute top-0 bottom-0 w-0.5 bg-amber-500"
                 style={{
-                  position: "absolute",
                   left: `${Math.min(stressRatio / 1.5, 1) * 100}%`,
-                  top: -2,
-                  bottom: -2,
-                  width: 2,
-                  backgroundColor: "#f59e0b",
+                  marginTop: -2,
+                  marginBottom: -2,
                 }}
               />
             </div>
           </div>
         );
       })}
-      <div style={{ fontSize: 11, color: "#334155", marginTop: 8 }}>
-        Applied stress: <span style={{ fontFamily: "JetBrains Mono, monospace", color: "#f59e0b" }}>{Math.abs(MPa).toFixed(2)} MPa</span>
+      <div className="text-[11px] text-slate-500 mt-2">
+        Applied stress: <span className="font-mono text-amber-500">{Math.abs(MPa).toFixed(2)} MPa</span>
       </div>
     </div>
   );
