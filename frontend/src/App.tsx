@@ -10,6 +10,8 @@ import StressStrainPage from "./pages/tools/StressStrainPage";
 import MohrsCirclePage from "./pages/tools/MohrsCirclePage";
 import ReynoldsPage from "./pages/tools/ReynoldsPage";
 import VibrationPage from "./pages/tools/VibrationPage";
+import BeamPage from "./pages/tools/BeamPage";
+import BernoulliPage from "./pages/tools/BernoulliPage";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -34,6 +36,8 @@ export default function App() {
             <Route path="/tools/mohrs-circle" element={<MohrsCirclePage />} />
             <Route path="/tools/reynolds" element={<ReynoldsPage />} />
             <Route path="/tools/vibration" element={<VibrationPage />} />
+            <Route path="/tools/beam" element={<BeamPage />} />
+            <Route path="/tools/bernoulli" element={<BernoulliPage />} />
             <Route path="/formulas" element={<FormulasPage />} />
           </Routes>
         </main>

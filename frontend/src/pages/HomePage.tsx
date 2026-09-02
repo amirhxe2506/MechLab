@@ -93,12 +93,21 @@ const tools = [
   },
   {
     id: "beam",
-    href: "/tools",
+    href: "/tools/beam",
     title: "Beam Analysis",
-    subtitle: "V, M diagrams",
+    subtitle: "V(x), M(x) diagrams",
     description: "Shear force and bending moment diagrams for simply supported and cantilever beams.",
     badge: "Mechanics",
     badgeColor: "#f59e0b",
+  },
+  {
+    id: "bernoulli",
+    href: "/tools/bernoulli",
+    title: "Bernoulli Flow",
+    subtitle: "P₁ + ½ρv₁² + ρgz₁ = Const.",
+    description: "Solve streamline energy equation for pressure, velocity, or elevation with head breakdown.",
+    badge: "Fluids",
+    badgeColor: "#06b6d4",
   },
 ];
 

@@ -59,18 +59,31 @@ const tools = [
   },
   {
     id: "beam",
-    href: "/tools",
+    href: "/tools/beam",
     title: "Beam Analysis",
-    formula: "EI·d²y/dx² = M(x)",
+    formula: "EI·d²y/dx² = M(x)  ·  dM/dx = V(x)",
     description:
       "Shear force and bending moment diagrams for simply supported and cantilever beams with point loads and distributed loads.",
     subject: "Strength of Materials",
     badge: "Mechanics",
     badgeColor: "#f59e0b",
-    inputs: ["Beam Length", "Support Type", "Load Type", "Load Magnitude"],
-    outputs: ["Reactions", "Shear Force Diagram", "Bending Moment Diagram", "Deflection"],
+    inputs: ["Beam Length", "Support Type", "Load Positions", "Load Magnitudes"],
+    outputs: ["Reactions", "Shear Force Diagram", "Bending Moment Diagram", "Max Moment"],
     features: ["SFD/BMD plots", "Reaction forces", "Max moment location"],
-    comingSoon: true,
+  },
+  {
+    id: "bernoulli",
+    href: "/tools/bernoulli",
+    title: "Bernoulli Flow Calculator",
+    formula: "P₁ + ½ρv₁² + ρgz₁ = P₂ + ½ρv₂² + ρgz₂",
+    description:
+      "Solve Bernoulli's energy equation along a streamline for steady, incompressible flow with head breakdown.",
+    subject: "Fluid Mechanics",
+    badge: "Fluids",
+    badgeColor: "#06b6d4",
+    inputs: ["Density (ρ)", "Station 1 (P₁, v₁, z₁)", "Station 2 parameters"],
+    outputs: ["Target Unknown", "Total Energy Head", "Head Breakdown (P/γ, v²/2g, z)"],
+    features: ["Fluid presets", "Energy conservation check", "Head distribution"],
   },
 ];
 
