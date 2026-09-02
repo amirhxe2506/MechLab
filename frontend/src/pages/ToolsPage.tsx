@@ -1,6 +1,21 @@
 import { Link } from "react-router-dom";
 
-const tools = [
+interface ToolItem {
+  id: string;
+  href: string;
+  title: string;
+  formula: string;
+  description: string;
+  subject: string;
+  badge: string;
+  badgeColor: string;
+  inputs: string[];
+  outputs: string[];
+  features: string[];
+  comingSoon?: boolean;
+}
+
+const tools: ToolItem[] = [
   {
     id: "stress-strain",
     href: "/tools/stress-strain",
