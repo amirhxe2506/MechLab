@@ -1,5 +1,7 @@
 import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
+import { useDebounce } from "../../hooks/useDebounce";
+import { EngineeringValue } from "../../components/EngineeringValue";
 
 interface Inputs {
   sigmaX: string;
@@ -32,21 +34,12 @@ function compute(inputs: Inputs): Results | null {
   return { sigma1, sigma2, tauMax, sigmaC, R, thetaP };
 }
 
-function fmt(n: number): string {
-  if (Math.abs(n) >= 1e6) return (n / 1e6).toFixed(3) + " GPa";
-  if (Math.abs(n) >= 1e3) return (n / 1e3).toFixed(3) + " kPa";
-  return n.toFixed(2) + " Pa";
-}
-
-function fmtMPa(n: number): string {
-  return n.toFixed(2);
-}
-
 export default function MohrsCirclePage() {
   const [inputs, setInputs] = useState<Inputs>({ sigmaX: "250", sigmaY: "-100", tauXY: "75" });
   const [unit, setUnit] = useState("MPa");
 
-  const results = useMemo(() => compute(inputs), [inputs]);
+  const debouncedInputs = useDebounce(inputs, 300);
+  const results = useMemo(() => compute(debouncedInputs), [debouncedInputs]);
 
   const setInput = (key: keyof Inputs) => (e: React.ChangeEvent<HTMLInputElement>) => {
     setInputs((prev) => ({ ...prev, [key]: e.target.value }));
@@ -118,7 +111,7 @@ export default function MohrsCirclePage() {
 
             <button
               onClick={loadExample}
-              className="mt-4 w-full py-1.5 px-3.5 text-xs bg-white/5 border border-white/10 rounded-md text-slate-500 hover:text-slate-300 hover:bg-white/10 cursor-pointer transition-colors focus:outline-none"
+              className="mt-4 w-full py-1.5 px-3.5 text-xs bg-white/5 border border-white/10 rounded-md text-slate-500 hover:text-cyan-400 hover:bg-cyan-500/10 hover:border-cyan-500/50 hover:shadow-[0_0_10px_rgba(6,182,212,0.2)] cursor-pointer transition-all focus:outline-none"
             >
               Load Example
             </button>
@@ -132,12 +125,12 @@ export default function MohrsCirclePage() {
               </div>
               <div className="flex flex-col gap-2.5">
                 {[
-                  { label: "Max Principal Stress", sym: "σ₁", val: fmtMPa(results.sigma1), color: "text-green-500" },
-                  { label: "Min Principal Stress", sym: "σ₂", val: fmtMPa(results.sigma2), color: "text-red-500" },
-                  { label: "Center (σC)", sym: "σC", val: fmtMPa(results.sigmaC), color: "text-slate-400" },
-                  { label: "Circle Radius", sym: "R", val: fmtMPa(results.R), color: "text-blue-500" },
-                  { label: "Max Shear Stress", sym: "τmax", val: fmtMPa(results.tauMax), color: "text-amber-500" },
-                  { label: "Principal Angle", sym: "θp", val: results.thetaP.toFixed(2) + "°", color: "text-cyan-500" },
+                  { label: "Max Principal Stress", sym: "σ₁", val: results.sigma1, isAngle: false, color: "text-green-500" },
+                  { label: "Min Principal Stress", sym: "σ₂", val: results.sigma2, isAngle: false, color: "text-red-500" },
+                  { label: "Center (σC)", sym: "σC", val: results.sigmaC, isAngle: false, color: "text-slate-400" },
+                  { label: "Circle Radius", sym: "R", val: results.R, isAngle: false, color: "text-blue-500" },
+                  { label: "Max Shear Stress", sym: "τmax", val: results.tauMax, isAngle: false, color: "text-amber-500" },
+                  { label: "Principal Angle", sym: "θp", val: results.thetaP, isAngle: true, color: "text-cyan-500" },
                 ].map((r) => (
                   <div
                     key={r.sym}
@@ -148,7 +141,7 @@ export default function MohrsCirclePage() {
                       <span className="text-xs text-slate-500">{r.label}</span>
                     </div>
                     <span className="font-mono text-sm font-bold text-slate-200">
-                      {r.val} <span className="text-[10px] text-slate-500 font-normal">{r.sym === "θp" ? "" : unit}</span>
+                      <EngineeringValue value={r.val} unit="" precision={2} valueClassName="inline" /> <span className="text-[10px] text-slate-500 font-normal">{r.isAngle ? "°" : unit}</span>
                     </span>
                   </div>
                 ))}

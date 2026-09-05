@@ -1,5 +1,7 @@
 import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
+import { useDebounce } from "../../hooks/useDebounce";
+import { EngineeringValue } from "../../components/EngineeringValue";
 
 type TargetUnknown = "p2" | "v2" | "z2";
 
@@ -98,12 +100,14 @@ function calculateBernoulli(inputs: Inputs, target: TargetUnknown): BernoulliRes
 
     p2 = p2_kpa * 1000;
     const dyn2 = 0.5 * rho * v2 * v2;
-    z2 = (totalPressure1 - p2 - dyn2) / (rho * G);
+    const pot2 = totalPressure1 - p2 - dyn2;
+    z2 = pot2 / (rho * G);
     solvedValue = z2;
     solvedUnit = "m";
   }
 
   const dyn2 = 0.5 * rho * v2 * v2;
+  const pot2 = rho * G * z2;
 
   return {
     target,
@@ -114,7 +118,7 @@ function calculateBernoulli(inputs: Inputs, target: TargetUnknown): BernoulliRes
       pressureHead: p1 / (rho * G),
       velocityHead: dyn1 / (rho * G),
       elevationHead: z1,
-      totalHead,
+      totalHead: totalHead,
       staticPressurePa: p1,
       dynamicPressurePa: dyn1,
     },
@@ -122,7 +126,7 @@ function calculateBernoulli(inputs: Inputs, target: TargetUnknown): BernoulliRes
       pressureHead: p2 / (rho * G),
       velocityHead: dyn2 / (rho * G),
       elevationHead: z2,
-      totalHead,
+      totalHead: (p2 + dyn2 + pot2) / (rho * G),
       staticPressurePa: p2,
       dynamicPressurePa: dyn2,
     },
@@ -130,22 +134,28 @@ function calculateBernoulli(inputs: Inputs, target: TargetUnknown): BernoulliRes
 }
 
 export default function BernoulliPage() {
-  const [target, setTarget] = useState<TargetUnknown>("p2");
   const [inputs, setInputs] = useState<Inputs>({
     density: "998.2",
-    p1: "200",
-    v1: "2.0",
-    z1: "1.0",
-    p2: "150",
-    v2: "4.5",
-    z2: "3.0",
+    p1: "250",
+    v1: "2",
+    z1: "0",
+    p2: "",
+    v2: "4",
+    z2: "10",
   });
+  const [target, setTarget] = useState<TargetUnknown>("p2");
   const [selectedFluid, setSelectedFluid] = useState(0);
 
-  const results = useMemo(() => calculateBernoulli(inputs, target), [inputs, target]);
+  const debouncedInputs = useDebounce(inputs, 300);
+  const results = useMemo(() => calculateBernoulli(debouncedInputs, target), [debouncedInputs, target]);
 
   const setInput = (key: keyof Inputs) => (e: React.ChangeEvent<HTMLInputElement>) => {
     setInputs((prev) => ({ ...prev, [key]: e.target.value }));
+  };
+
+  const setTargetUnknown = (t: TargetUnknown) => {
+    setTarget(t);
+    setInputs((prev) => ({ ...prev, [t]: "" })); // Clear the target field
   };
 
   const applyPreset = (idx: number) => {
@@ -234,10 +244,10 @@ export default function BernoulliPage() {
                     key={f.name}
                     type="button"
                     onClick={() => applyPreset(i)}
-                    className={`py-1 px-2.5 text-[11px] rounded transition-colors cursor-pointer border ${
+                    className={`py-1 px-2.5 text-[11px] rounded transition-all cursor-pointer border focus:outline-none ${
                       selectedFluid === i
-                        ? "bg-cyan-500/20 text-cyan-400 border-cyan-500/40"
-                        : "bg-white/5 text-slate-500 border-white/5 hover:bg-white/10"
+                        ? "bg-cyan-500/20 text-cyan-400 border-cyan-500/50 shadow-[0_0_10px_rgba(6,182,212,0.2)]"
+                        : "bg-white/5 text-slate-500 border-white/5 hover:text-cyan-400 hover:bg-cyan-500/10 hover:border-cyan-500/30 hover:shadow-[0_0_10px_rgba(6,182,212,0.1)]"
                     }`}
                   >
                     {f.name.split(" ")[0]}
@@ -409,13 +419,13 @@ export default function BernoulliPage() {
                   SOLVED VALUE ({results.target.toUpperCase()})
                 </div>
                 <div className="font-mono text-4xl sm:text-5xl font-bold text-slate-100 mb-2">
-                  {results.solvedValue.toFixed(3)}{" "}
+                  <EngineeringValue value={results.solvedValue} unit="" precision={3} valueClassName="inline" />{" "}
                   <span className="text-lg font-normal text-cyan-400">{results.solvedUnit}</span>
                 </div>
                 <div className="text-xs text-slate-500">
                   Total Energy Head (H):{" "}
                   <span className="font-mono font-semibold text-slate-300">
-                    {results.totalHead.toFixed(2)} m
+                    <EngineeringValue value={results.totalHead} unit="m" precision={2} valueClassName="inline" />
                   </span>
                 </div>
               </div>
@@ -436,19 +446,19 @@ export default function BernoulliPage() {
                       <div className="flex justify-between">
                         <span className="text-slate-500">Pressure Head (P/γ):</span>
                         <span className="font-mono text-cyan-400">
-                          {results.station1.pressureHead.toFixed(2)} m
+                          <EngineeringValue value={results.station1.pressureHead} unit="m" precision={2} valueClassName="inline" />
                         </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-slate-500">Velocity Head (v²/2g):</span>
                         <span className="font-mono text-amber-400">
-                          {results.station1.velocityHead.toFixed(2)} m
+                          <EngineeringValue value={results.station1.velocityHead} unit="m" precision={2} valueClassName="inline" />
                         </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-slate-500">Elevation Head (z):</span>
                         <span className="font-mono text-green-400">
-                          {results.station1.elevationHead.toFixed(2)} m
+                          <EngineeringValue value={results.station1.elevationHead} unit="m" precision={2} valueClassName="inline" />
                         </span>
                       </div>
                     </div>
@@ -463,19 +473,19 @@ export default function BernoulliPage() {
                       <div className="flex justify-between">
                         <span className="text-slate-500">Pressure Head (P/γ):</span>
                         <span className="font-mono text-cyan-400">
-                          {results.station2.pressureHead.toFixed(2)} m
+                          <EngineeringValue value={results.station2.pressureHead} unit="m" precision={2} valueClassName="inline" />
                         </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-slate-500">Velocity Head (v²/2g):</span>
                         <span className="font-mono text-amber-400">
-                          {results.station2.velocityHead.toFixed(2)} m
+                          <EngineeringValue value={results.station2.velocityHead} unit="m" precision={2} valueClassName="inline" />
                         </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-slate-500">Elevation Head (z):</span>
                         <span className="font-mono text-green-400">
-                          {results.station2.elevationHead.toFixed(2)} m
+                          <EngineeringValue value={results.station2.elevationHead} unit="m" precision={2} valueClassName="inline" />
                         </span>
                       </div>
                     </div>
@@ -492,13 +502,13 @@ export default function BernoulliPage() {
                   <div className="flex justify-between items-center py-1.5 border-b border-white/5">
                     <span className="text-slate-500">Static Pressure at Station 2:</span>
                     <span className="font-mono text-slate-200 font-semibold">
-                      {(results.station2.staticPressurePa / 1000).toFixed(2)} kPa
+                      <EngineeringValue value={results.station2.staticPressurePa / 1000} unit="kPa" precision={2} valueClassName="inline" />
                     </span>
                   </div>
                   <div className="flex justify-between items-center py-1.5 border-b border-white/5">
                     <span className="text-slate-500">Dynamic Pressure at Station 2:</span>
                     <span className="font-mono text-slate-200 font-semibold">
-                      {(results.station2.dynamicPressurePa / 1000).toFixed(2)} kPa
+                      <EngineeringValue value={results.station2.dynamicPressurePa / 1000} unit="kPa" precision={2} valueClassName="inline" />
                     </span>
                   </div>
                   <div className="flex justify-between items-center py-1.5">

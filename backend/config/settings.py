@@ -135,8 +135,11 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # --- CORS -------------------------------------------------------------
-# The React/Vite dev server runs on :5173 by default.
-CORS_ALLOWED_ORIGINS = _env_list("CORS_ALLOWED_ORIGINS", "http://localhost:5173")
+# The React/Vite dev server runs on :5173 by default, and figma-make on :8443.
+CORS_ALLOWED_ORIGINS = _env_list("CORS_ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:8443,http://127.0.0.1:8443")
+# In development, allow all origins to avoid port mismatch headaches.
+if DEBUG:
+    CORS_ALLOW_ALL_ORIGINS = True
 
 # --- Django REST Framework ----------------------------------------------
 # Session-based auth for the initial web app (per the approved

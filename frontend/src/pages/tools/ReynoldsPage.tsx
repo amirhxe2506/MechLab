@@ -1,5 +1,7 @@
 import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
+import { EngineeringValue } from "../../components/EngineeringValue";
+import { useDebounce } from "../../hooks/useDebounce";
 
 const fluidPresets = [
   { name: "Water (20°C)", rho: 998.2, mu: 0.001002 },
@@ -56,14 +58,16 @@ export default function ReynoldsPage() {
   const [inputs, setInputs] = useState<Inputs>({ rho: "998.2", v: "2.5", D: "0.05", mu: "0.001002" });
   const [selectedFluid, setSelectedFluid] = useState(0);
 
+  const debouncedInputs = useDebounce(inputs, 300);
+
   const Re = useMemo(() => {
-    const rho = parseFloat(inputs.rho);
-    const v = parseFloat(inputs.v);
-    const D = parseFloat(inputs.D);
-    const mu = parseFloat(inputs.mu);
+    const rho = parseFloat(debouncedInputs.rho);
+    const v = parseFloat(debouncedInputs.v);
+    const D = parseFloat(debouncedInputs.D);
+    const mu = parseFloat(debouncedInputs.mu);
     if ([rho, v, D, mu].some(isNaN) || mu <= 0 || D <= 0 || rho <= 0 || v <= 0) return null;
     return (rho * v * D) / mu;
-  }, [inputs]);
+  }, [debouncedInputs]);
 
   const regime = Re !== null ? getFlowRegime(Re) : null;
 
@@ -121,10 +125,10 @@ export default function ReynoldsPage() {
                 <button
                   key={f.name}
                   onClick={() => applyPreset(i)}
-                  className={`py-2 px-3.5 text-left rounded-md cursor-pointer flex items-center justify-between border transition-colors focus:outline-none ${
+                  className={`py-2 px-3.5 text-left rounded-md cursor-pointer flex items-center justify-between border transition-all focus:outline-none ${
                     selectedFluid === i
-                      ? "bg-cyan-500/10 border-cyan-500/30 text-cyan-500"
-                      : "bg-white/5 border-white/5 text-slate-500 hover:bg-white/10"
+                      ? "bg-cyan-500/10 border-cyan-500/50 text-cyan-500 shadow-[0_0_15px_rgba(6,182,212,0.2)]"
+                      : "bg-white/5 border-white/5 text-slate-500 hover:bg-cyan-500/5 hover:border-cyan-500/30 hover:text-cyan-400 hover:shadow-[0_0_10px_rgba(6,182,212,0.1)]"
                   }`}
                 >
                   <span className="text-[13px]">{f.name}</span>
@@ -183,8 +187,13 @@ export default function ReynoldsPage() {
                 <div className="text-[11px] font-mono text-slate-500 tracking-widest mb-4">
                   REYNOLDS NUMBER
                 </div>
-                <div className="font-mono text-[clamp(2.5rem,6vw,4rem)] font-bold text-slate-100 tracking-tight leading-none mb-2">
-                  {Re.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
+                <div className="font-mono text-[clamp(2.5rem,6vw,4rem)] font-bold text-slate-100 tracking-tight leading-none mb-2 overflow-hidden flex justify-center w-full">
+                  <EngineeringValue
+                    value={Re}
+                    unit=""
+                    precision={0}
+                    valueClassName="text-[clamp(1.5rem,4vw,3.5rem)]"
+                  />
                 </div>
                 <div className="text-xs text-slate-500 mb-6">dimensionless</div>
 
@@ -218,8 +227,8 @@ export default function ReynoldsPage() {
                 </div>
                 <div className="flex flex-col gap-1">
                   {[
-                    { label: "Reynolds Number", val: Re.toFixed(1), sym: "Re" },
-                    { label: "Kinematic Viscosity", val: (parseFloat(inputs.mu) / parseFloat(inputs.rho)).toExponential(4), sym: "ν", unit: "m²/s" },
+                    { label: "Reynolds Number", val: <EngineeringValue value={Re} unit="" precision={1} valueClassName="inline" />, sym: "Re" },
+                    { label: "Kinematic Viscosity", val: <EngineeringValue value={parseFloat(debouncedInputs.mu) / parseFloat(debouncedInputs.rho)} unit="" precision={4} valueClassName="inline" />, sym: "ν", unit: "m²/s" },
                     { label: "Flow Regime", val: regime.label, sym: "—", colored: regime.color },
                     { label: "Critical Re Range", val: regime.critical, sym: "—" },
                   ].map((r) => (
@@ -281,10 +290,10 @@ function FlowRegimeScale({ Re }: { Re: number }) {
         <span>{(maxRe / 1000).toFixed(0)}k</span>
       </div>
 
-      <div className="mt-3 text-xs text-slate-500">
+      <div className="mt-3 text-xs text-slate-500 flex items-center gap-1">
         Current:{" "}
-        <span className="font-mono text-slate-200 font-semibold">
-          Re = {Re.toFixed(0)}
+        <span className="font-mono text-slate-200 font-semibold flex items-center gap-1">
+          Re = <EngineeringValue value={Re} unit="" precision={0} valueClassName="text-xs" />
         </span>
       </div>
     </div>

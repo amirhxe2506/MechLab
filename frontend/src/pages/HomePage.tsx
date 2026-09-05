@@ -805,8 +805,11 @@ function RecentSection() {
             description=""
             compact
           />
-          <Link to="/learn" style={{ fontSize: 13, color: "#3b82f6", textDecoration: "none" }}>
-            View all →
+          <Link
+            to="/formulas"
+            className="inline-flex items-center justify-center h-10 px-6 rounded-md text-sm font-semibold bg-white/5 border border-white/10 text-white hover:text-cyan-400 hover:bg-cyan-500/10 hover:border-cyan-500/50 hover:shadow-[0_0_15px_rgba(6,182,212,0.2)] transition-all no-underline mt-4"
+          >
+            View All Formulas
           </Link>
         </div>
 

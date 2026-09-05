@@ -17,13 +17,19 @@ class StressInputSerializer(serializers.Serializer):
         choices=unit_choices("force"), required=False, default="N",
     )
 
-    # No unit-conversion dimension is registered for area (m^2) in
-    # calculations.units -- there is no "area" dimension table, only
-    # "length" (m). Submit directly in m^2; do not invent an ad-hoc
-    # conversion factor here.
+    # Now "area" has a registered dimension in calculations.units.
     area = serializers.FloatField(
-        help_text="Cross-sectional area A, in m^2 (SI base unit -- no "
-                   "unit-conversion dimension is registered for area).",
+        help_text="Cross-sectional area A.",
+    )
+    area_unit = serializers.ChoiceField(
+        choices=unit_choices("area"), required=False, default="m2",
+    )
+
+    output_unit_system = serializers.ChoiceField(
+        choices=[("SI", "SI"), ("Imperial", "Imperial")],
+        required=False,
+        default="SI",
+        help_text="Requested unit system for the output values.",
     )
 
     youngs_modulus = serializers.FloatField(help_text="Young's modulus E.")
@@ -47,7 +53,7 @@ class StressInputSerializer(serializers.Serializer):
         d = self.validated_data
         return dict(
             force=convert_to_si(d["force"], d.get("force_unit", "N"), "force", "force_unit"),
-            area=d["area"],
+            area=convert_to_si(d["area"], d.get("area_unit", "m2"), "area", "area_unit"),
             youngs_modulus=convert_to_si(
                 d["youngs_modulus"], d.get("youngs_modulus_unit", "Pa"), "pressure",
                 "youngs_modulus_unit",
@@ -60,16 +66,28 @@ class StressInputSerializer(serializers.Serializer):
         )
 
 
+class StressResultUnitsSerializer(serializers.Serializer):
+    stress = serializers.CharField()
+    strain = serializers.CharField()
+    deformation = serializers.CharField()
+    lateral_strain = serializers.CharField()
+
+class StressResultValuesSISerializer(serializers.Serializer):
+    stress = serializers.FloatField()
+    deformation = serializers.FloatField()
+
 class StressResultSerializer(serializers.Serializer):
-    """Mirrors calculations.mechanics.stress.StressResult exactly."""
-    stress = serializers.FloatField(help_text="Normal stress sigma, Pa.")
+    """Enriched result matching calculations.mechanics.stress.StressResult."""
+    stress = serializers.FloatField(help_text="Normal stress in requested output units.")
     strain = serializers.FloatField(help_text="Axial strain epsilon, dimensionless.")
-    deformation = serializers.FloatField(help_text="Axial deformation delta, m.")
+    deformation = serializers.FloatField(help_text="Axial deformation delta in requested output units.")
     lateral_strain = serializers.FloatField(
         allow_null=True,
         help_text="Lateral strain from the Poisson effect, dimensionless. "
                    "null if poisson_ratio was not provided.",
     )
+    units = StressResultUnitsSerializer(help_text="Display units for the response values.")
+    values_si = StressResultValuesSISerializer(help_text="Raw SI values (useful for visual scaling).")
     warnings = serializers.ListField(
         child=serializers.CharField(),
         help_text="Non-fatal engineering warnings, e.g. strain outside the "

@@ -28,6 +28,7 @@ from ..serializers.common import CalculatorValidationErrorSerializer
 # enhancement is an available_dimensions() function.)
 DIMENSIONS = (
     "length",
+    "area",
     "force",
     "pressure",
     "mass",
@@ -47,6 +48,7 @@ class UnitsResponseSerializer(serializers.Serializer):
     dimension names are the keys, not a fixed field.
     """
     length = serializers.ListField(child=serializers.CharField(), help_text="Units for the 'length' dimension.")
+    area = serializers.ListField(child=serializers.CharField(), help_text="Units for the 'area' dimension.")
     force = serializers.ListField(child=serializers.CharField(), help_text="Units for the 'force' dimension.")
     pressure = serializers.ListField(child=serializers.CharField(), help_text="Units for the 'pressure' dimension.")
     mass = serializers.ListField(child=serializers.CharField(), help_text="Units for the 'mass' dimension.")

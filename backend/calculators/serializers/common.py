@@ -29,6 +29,7 @@ from calculations.units import available_units, to_si
 # field's help_text. See the Phase 2 final report for the full list.
 REGISTERED_DIMENSIONS = (
     "length",
+    "area",
     "force",
     "pressure",
     "mass",

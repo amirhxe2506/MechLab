@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
+import { useDebounce } from "../../hooks/useDebounce";
 import {
   AreaChart,
   Area,
@@ -199,9 +200,14 @@ export default function BeamPage() {
     { id: "1", start: "0", end: "6", w: "5" },
   ]);
 
+  const debouncedType = useDebounce(beamType, 300);
+  const debouncedLength = useDebounce(length, 300);
+  const debouncedPointLoads = useDebounce(pointLoads, 300);
+  const debouncedUdlLoads = useDebounce(udlLoads, 300);
+
   const results = useMemo(
-    () => calculateBeam(beamType, length, pointLoads, udlLoads),
-    [beamType, length, pointLoads, udlLoads]
+    () => calculateBeam(debouncedType, debouncedLength, debouncedPointLoads, debouncedUdlLoads),
+    [debouncedType, debouncedLength, debouncedPointLoads, debouncedUdlLoads]
   );
 
   const addPointLoad = () => {

@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
+import { useDebounce } from "../../hooks/useDebounce";
 import {
   LineChart,
   Line,
@@ -107,7 +108,7 @@ function computeVibration(inputs: Inputs): SDOFResults | null {
 const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: Array<{ name: string; value: number; color: string }>; label?: number }) => {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-[#0c1528] border border-white/10 rounded-md py-2.5 px-3.5 font-mono text-xs">
+    <div className="bg-[#0c1528] border border-white/10 rounded-md py-2.5 px-3.5 font-mono text-xs shadow-lg">
       <div className="text-slate-500 mb-1">t = {label?.toFixed(3)} s</div>
       {payload.map((p) => (
         <div key={p.name} style={{ color: p.color }}>
@@ -121,7 +122,8 @@ const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?:
 export default function VibrationPage() {
   const [inputs, setInputs] = useState<Inputs>({ m: "1", k: "100", c: "2", x0: "0.1", v0: "0" });
 
-  const results = useMemo(() => computeVibration(inputs), [inputs]);
+  const debouncedInputs = useDebounce(inputs, 300);
+  const results = useMemo(() => computeVibration(debouncedInputs), [debouncedInputs]);
 
   const setInput = (key: keyof Inputs) => (e: React.ChangeEvent<HTMLInputElement>) => {
     setInputs((prev) => ({ ...prev, [key]: e.target.value }));
@@ -181,7 +183,7 @@ export default function VibrationPage() {
                 <button
                   key={p.label}
                   onClick={() => setInputs(p.vals)}
-                  className="py-2 px-2.5 text-xs bg-white/5 border border-white/10 rounded-md text-slate-500 cursor-pointer transition-all hover:bg-purple-500/10 hover:text-purple-400 hover:border-purple-500/30 focus:outline-none"
+                  className="py-1.5 px-2 text-center text-[11px] rounded bg-white/5 border border-white/5 text-slate-400 hover:text-cyan-400 hover:bg-cyan-500/10 hover:border-cyan-500/50 hover:shadow-[0_0_10px_rgba(6,182,212,0.2)] transition-all cursor-pointer focus:outline-none"
                 >
                   {p.label}
                 </button>
@@ -271,13 +273,13 @@ export default function VibrationPage() {
               </div>
               <div className="flex flex-col gap-2">
                 {[
-                  { label: "Natural Frequency", val: results.omegaN.toFixed(3), unit: "rad/s", sym: "ωn" },
-                  { label: "Natural Freq (Hz)", val: results.fn.toFixed(3), unit: "Hz", sym: "fn" },
-                  { label: "Damping Ratio", val: results.zeta.toFixed(4), unit: "—", sym: "ζ" },
+                  { label: "Natural Frequency", val: results.omegaN, unit: "rad/s", sym: "ωn" },
+                  { label: "Natural Freq (Hz)", val: results.fn, unit: "Hz", sym: "fn" },
+                  { label: "Damping Ratio", val: results.zeta, unit: "—", sym: "ζ" },
                   ...(results.zeta < 1
                     ? [
-                        { label: "Damped Frequency", val: results.omegaD.toFixed(3), unit: "rad/s", sym: "ωd" },
-                        { label: "Damped Period", val: results.Td.toFixed(4), unit: "s", sym: "Td" },
+                        { label: "Damped Frequency", val: results.omegaD, unit: "rad/s", sym: "ωd" },
+                        { label: "Damped Period", val: results.Td, unit: "s", sym: "Td" },
                       ]
                     : []),
                 ].map((r) => (
@@ -289,8 +291,9 @@ export default function VibrationPage() {
                       <span className="font-mono text-cyan-500">{r.sym}</span>
                       <span className="text-slate-500">{r.label}</span>
                     </div>
-                    <span className="font-mono text-slate-200 font-semibold">
-                      {r.val} <span className="text-slate-500 font-normal">{r.unit}</span>
+                    <span className="font-mono text-slate-200 font-semibold flex items-center gap-1">
+                      <EngineeringValue value={r.val} unit="" precision={3} valueClassName="inline text-xs" />
+                      <span className="text-slate-500 font-normal">{r.unit}</span>
                     </span>
                   </div>
                 ))}

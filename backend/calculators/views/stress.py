@@ -36,17 +36,29 @@ class StressStrainView(APIView):
                 "Steel bar, 10 kN tension",
                 value={
                     "force": 10, "force_unit": "kN",
-                    "area": 5e-4,
+                    "area": 500, "area_unit": "mm2",
                     "youngs_modulus": 200, "youngs_modulus_unit": "GPa",
                     "original_length": 1.0, "original_length_unit": "m",
+                    "output_unit_system": "SI"
                 },
                 request_only=True,
             ),
             OpenApiExample(
                 "Result",
                 value={
-                    "stress": 2e7, "strain": 1e-4, "deformation": 1e-4,
-                    "lateral_strain": None, "warnings": [],
+                    "stress": 20.0, "strain": 1e-4, "deformation": 0.1,
+                    "lateral_strain": None,
+                    "units": {
+                        "stress": "MPa",
+                        "strain": "—",
+                        "deformation": "mm",
+                        "lateral_strain": "—"
+                    },
+                    "values_si": {
+                        "stress": 2e7,
+                        "deformation": 1e-4
+                    },
+                    "warnings": [],
                 },
                 response_only=True,
                 status_codes=["200"],
@@ -65,5 +77,38 @@ class StressStrainView(APIView):
 
         result = calculate_stress(**input_serializer.to_engine_kwargs())
 
-        output_serializer = StressResultSerializer(dataclasses.asdict(result))
+        output_sys = input_serializer.validated_data.get("output_unit_system", "SI")
+
+        from calculations.units import from_si
+
+        if output_sys == "Imperial":
+            stress_val = from_si(result.stress, "psi", "pressure")
+            stress_unit = "psi"
+            def_val = from_si(result.deformation, "in", "length")
+            def_unit = "in"
+        else:
+            stress_val = from_si(result.stress, "MPa", "pressure")
+            stress_unit = "MPa"
+            def_val = from_si(result.deformation, "mm", "length")
+            def_unit = "mm"
+
+        enriched_result = {
+            "stress": stress_val,
+            "strain": result.strain,
+            "deformation": def_val,
+            "lateral_strain": result.lateral_strain,
+            "units": {
+                "stress": stress_unit,
+                "strain": "—",
+                "deformation": def_unit,
+                "lateral_strain": "—",
+            },
+            "values_si": {
+                "stress": result.stress,
+                "deformation": result.deformation,
+            },
+            "warnings": result.warnings,
+        }
+
+        output_serializer = StressResultSerializer(enriched_result)
         return Response(output_serializer.data, status=status.HTTP_200_OK)
