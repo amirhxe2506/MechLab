@@ -191,42 +191,25 @@ export default function FormulasPage() {
   });
 
   return (
-    <div style={{ maxWidth: 1280, margin: "0 auto", padding: "48px 24px" }}>
+    <div className="max-w-7xl mx-auto py-12 px-6">
       {/* Header */}
-      <div style={{ marginBottom: 40 }}>
-        <div style={{ fontSize: 11, fontFamily: "JetBrains Mono, monospace", color: "#3b82f6", letterSpacing: "0.1em", marginBottom: 10 }}>
+      <div className="mb-10">
+        <div className="text-[11px] font-mono text-blue-500 tracking-widest mb-2.5">
           FORMULA LIBRARY
         </div>
-        <h1
-          style={{
-            fontFamily: "DM Sans, system-ui, sans-serif",
-            fontSize: "clamp(1.6rem, 3vw, 2.2rem)",
-            fontWeight: 700,
-            color: "#f1f5f9",
-            margin: "0 0 12px",
-            letterSpacing: "-0.03em",
-          }}
-        >
+        <h1 className="font-display text-[clamp(1.6rem,3vw,2.2rem)] font-bold text-slate-100 mb-3 tracking-tight">
           Engineering Formulas
         </h1>
-        <p style={{ fontSize: 15, color: "#475569", margin: 0 }}>
+        <p className="text-[15px] text-slate-600 m-0">
           {formulas.length} formulas across Mechanics, Fluids, Dynamics, and Statics.
         </p>
       </div>
 
       {/* Filters */}
-      <div
-        style={{
-          display: "flex",
-          gap: 12,
-          marginBottom: 28,
-          flexWrap: "wrap",
-          alignItems: "center",
-        }}
-      >
+      <div className="flex flex-wrap items-center gap-3 mb-7">
         {/* Search */}
-        <div style={{ position: "relative", flex: "1 1 280px", maxWidth: 380 }}>
-          <div style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#334155" }}>
+        <div className="relative flex-1 min-w-[280px] max-w-[380px]">
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <circle cx="11" cy="11" r="8" />
               <path d="m21 21-4.35-4.35" />
@@ -237,116 +220,67 @@ export default function FormulasPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search formulas..."
-            style={{
-              width: "100%",
-              padding: "9px 12px 9px 36px",
-              backgroundColor: "#0c1528",
-              border: "1px solid rgba(255,255,255,0.08)",
-              borderRadius: 8,
-              color: "#e2e8f0",
-              fontSize: 14,
-              outline: "none",
-              fontFamily: "Inter, system-ui, sans-serif",
-            }}
+            className="w-full py-[9px] px-3 pl-9 bg-[#0c1528] border border-white/10 rounded-lg text-slate-200 text-sm outline-none font-sans focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all"
           />
         </div>
 
         {/* Category filters */}
-        <div style={{ display: "flex", gap: 6 }}>
+        <div className="flex gap-1.5 flex-wrap">
           {categories.map((cat) => (
             <button
               key={cat}
               onClick={() => setCategory(cat)}
-              style={{
-                padding: "7px 14px",
-                borderRadius: 6,
-                fontSize: 13,
-                fontWeight: 500,
-                border: "1px solid",
-                borderColor: category === cat ? "rgba(59,130,246,0.4)" : "rgba(255,255,255,0.07)",
-                backgroundColor: category === cat ? "rgba(59,130,246,0.1)" : "transparent",
-                color: category === cat ? "#3b82f6" : "#475569",
-                cursor: "pointer",
-                transition: "all 0.15s ease",
-              }}
+              className={`py-1.5 px-3.5 rounded-md text-[13px] font-medium border cursor-pointer transition-all duration-150 focus:outline-none ${
+                category === cat
+                  ? "border-blue-500/40 bg-blue-500/10 text-blue-500"
+                  : "border-white/10 bg-transparent text-slate-500 hover:bg-white/5"
+              }`}
             >
               {cat}
             </button>
           ))}
         </div>
 
-        <div style={{ marginLeft: "auto", fontSize: 12, color: "#334155", fontFamily: "JetBrains Mono, monospace" }}>
+        <div className="ml-auto text-xs text-slate-600 font-mono">
           {filtered.length} results
         </div>
       </div>
 
       {/* Formula cards */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      <div className="flex flex-col gap-2.5">
         {filtered.map((formula) => {
           const isOpen = expanded === formula.id;
           return (
             <div
               key={formula.id}
-              style={{
-                backgroundColor: "#0c1528",
-                border: "1px solid rgba(255,255,255,0.07)",
-                borderLeft: `3px solid ${formula.accent}`,
-                borderRadius: "0 10px 10px 0",
-                overflow: "hidden",
-                transition: "border-color 0.15s ease",
-              }}
+              className="bg-[#0c1528] border border-white/5 rounded-r-xl overflow-hidden transition-colors duration-150"
+              style={{ borderLeft: `3px solid ${formula.accent}` }}
             >
               {/* Header row */}
               <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 20,
-                  padding: "16px 20px",
-                  cursor: "pointer",
-                  flexWrap: "wrap",
-                }}
+                className="flex items-center gap-5 py-4 px-5 cursor-pointer flex-wrap hover:bg-white/5 transition-colors"
                 onClick={() => setExpanded(isOpen ? null : formula.id)}
               >
                 {/* Formula expression */}
-                <div
-                  style={{
-                    fontFamily: "JetBrains Mono, monospace",
-                    fontSize: 15,
-                    fontWeight: 600,
-                    color: "#06b6d4",
-                    backgroundColor: "rgba(6,182,212,0.06)",
-                    border: "1px solid rgba(6,182,212,0.12)",
-                    borderRadius: 6,
-                    padding: "5px 14px",
-                    whiteSpace: "nowrap",
-                    flexShrink: 0,
-                    minWidth: 200,
-                  }}
-                >
+                <div className="font-mono text-[15px] font-semibold text-cyan-500 bg-cyan-500/10 border border-cyan-500/20 rounded-md py-1 px-3.5 whitespace-nowrap shrink-0 min-w-[200px]">
                   {formula.expression}
                 </div>
 
                 {/* Name and subject */}
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 15, fontWeight: 600, color: "#e2e8f0", fontFamily: "DM Sans, system-ui, sans-serif" }}>
+                <div className="flex-1 min-w-[200px]">
+                  <div className="text-[15px] font-semibold text-slate-200 font-display">
                     {formula.name}
                   </div>
-                  <div style={{ fontSize: 12, color: "#334155", marginTop: 3 }}>{formula.subject}</div>
+                  <div className="text-xs text-slate-600 mt-1">{formula.subject}</div>
                 </div>
 
                 {/* Category badge */}
                 <span
+                  className="text-[10px] font-semibold py-0.5 px-2 rounded font-mono tracking-wider"
                   style={{
-                    fontSize: 10,
-                    fontWeight: 600,
-                    padding: "2px 8px",
-                    borderRadius: 4,
-                    fontFamily: "JetBrains Mono, monospace",
-                    backgroundColor: `${formula.accent}12`,
+                    backgroundColor: `${formula.accent}15`,
                     color: formula.accent,
-                    border: `1px solid ${formula.accent}25`,
-                    letterSpacing: "0.04em",
+                    border: `1px solid ${formula.accent}30`,
                   }}
                 >
                   {formula.category.toUpperCase()}
@@ -360,7 +294,7 @@ export default function FormulasPage() {
                   fill="none"
                   stroke="#475569"
                   strokeWidth="2"
-                  style={{ transform: isOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s ease", flexShrink: 0 }}
+                  className={`shrink-0 transition-transform duration-200 ${isOpen ? "rotate-180" : "rotate-0"}`}
                 >
                   <path d="M6 9l6 6 6-6" />
                 </svg>
@@ -368,36 +302,28 @@ export default function FormulasPage() {
 
               {/* Expanded details */}
               {isOpen && (
-                <div style={{ borderTop: "1px solid rgba(255,255,255,0.05)", padding: "20px 20px 20px 23px" }}>
-                  <p style={{ fontSize: 14, color: "#64748b", margin: "0 0 20px", lineHeight: 1.65 }}>
+                <div className="border-t border-white/5 py-5 px-5 pl-6 bg-[#060b18]/50">
+                  <p className="text-sm text-slate-500 m-0 mb-5 leading-relaxed max-w-3xl">
                     {formula.description}
                   </p>
 
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     {/* Variables */}
                     <div>
-                      <div style={{ fontSize: 11, fontFamily: "JetBrains Mono, monospace", color: "#334155", letterSpacing: "0.06em", marginBottom: 12 }}>
+                      <div className="text-[11px] font-mono text-slate-600 tracking-wider mb-3">
                         VARIABLES
                       </div>
-                      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                      <div className="flex flex-col gap-1.5">
                         {formula.variables.map((v) => (
                           <div
                             key={v.symbol}
-                            style={{
-                              display: "flex",
-                              alignItems: "baseline",
-                              gap: 10,
-                              padding: "7px 10px",
-                              backgroundColor: "#060b18",
-                              borderRadius: 6,
-                              border: "1px solid rgba(255,255,255,0.04)",
-                            }}
+                            className="flex items-baseline gap-2.5 py-1.5 px-2.5 bg-[#060b18] rounded-md border border-white/5"
                           >
-                            <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 14, fontWeight: 600, color: "#06b6d4", minWidth: 32 }}>
+                            <span className="font-mono text-sm font-semibold text-cyan-500 min-w-[32px]">
                               {v.symbol}
                             </span>
-                            <span style={{ fontSize: 13, color: "#64748b", flex: 1 }}>{v.name}</span>
-                            <span style={{ fontSize: 11, fontFamily: "JetBrains Mono, monospace", color: "#334155" }}>
+                            <span className="text-[13px] text-slate-500 flex-1">{v.name}</span>
+                            <span className="text-[11px] font-mono text-slate-600">
                               {v.unit}
                             </span>
                           </div>
@@ -407,13 +333,13 @@ export default function FormulasPage() {
 
                     {/* Assumptions */}
                     <div>
-                      <div style={{ fontSize: 11, fontFamily: "JetBrains Mono, monospace", color: "#334155", letterSpacing: "0.06em", marginBottom: 12 }}>
+                      <div className="text-[11px] font-mono text-slate-600 tracking-wider mb-3">
                         ASSUMPTIONS
                       </div>
-                      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                      <div className="flex flex-col gap-2">
                         {formula.assumptions.map((a) => (
-                          <div key={a} style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: 13, color: "#64748b" }}>
-                            <span style={{ color: formula.accent, marginTop: 1, flexShrink: 0 }}>✓</span>
+                          <div key={a} className="flex items-start gap-2 text-[13px] text-slate-500">
+                            <span className="mt-px shrink-0" style={{ color: formula.accent }}>✓</span>
                             {a}
                           </div>
                         ))}
@@ -422,20 +348,7 @@ export default function FormulasPage() {
                       {formula.calculator && (
                         <Link
                           to={formula.calculator}
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 6,
-                            marginTop: 20,
-                            padding: "8px 16px",
-                            backgroundColor: "rgba(59,130,246,0.1)",
-                            border: "1px solid rgba(59,130,246,0.25)",
-                            borderRadius: 6,
-                            color: "#3b82f6",
-                            fontSize: 13,
-                            fontWeight: 500,
-                            textDecoration: "none",
-                          }}
+                          className="inline-flex items-center gap-1.5 mt-5 py-2 px-4 bg-blue-500/10 border border-blue-500/25 rounded-md text-blue-500 text-[13px] font-medium no-underline hover:bg-blue-500/20 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
                         >
                           Open Calculator →
                         </Link>

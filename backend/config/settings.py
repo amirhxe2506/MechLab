@@ -135,13 +135,17 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # --- CORS -------------------------------------------------------------
-# The React/Vite dev server runs on :5173 by default.
-CORS_ALLOWED_ORIGINS = _env_list("CORS_ALLOWED_ORIGINS", "http://localhost:5173")
+# The React/Vite dev server runs on :5173 by default, and figma-make on :8443.
+CORS_ALLOWED_ORIGINS = _env_list("CORS_ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:8443,http://127.0.0.1:8443")
+# In development, allow all origins to avoid port mismatch headaches.
+if DEBUG:
+    CORS_ALLOW_ALL_ORIGINS = True
 
 # --- Django REST Framework ----------------------------------------------
 # Session-based auth for the initial web app (per the approved
 # architecture). No default permission restriction yet -- there are no
-# endpoints to protect at this phase besides the open health check.
+# endpoints to protect at this phase besides the open health check and
+# the (also open, per Phase 2 scope) calculator endpoints.
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework.authentication.SessionAuthentication",
@@ -150,6 +154,9 @@ REST_FRAMEWORK = {
         "rest_framework.permissions.AllowAny",
     ],
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    # Translates calculations.exceptions.* into structured 400 responses.
+    # See calculators/exceptions.py.
+    "EXCEPTION_HANDLER": "calculators.exceptions.custom_exception_handler",
 }
 
 # --- drf-spectacular (OpenAPI schema / Swagger / Redoc) -------------------
@@ -157,9 +164,13 @@ SPECTACULAR_SETTINGS = {
     "TITLE": "MechLab API",
     "DESCRIPTION": (
         "REST API for MechLab -- a Mechanical Engineering learning, "
-        "calculation, and analysis platform. Phase 1: foundation only "
-        "(health check). Calculator endpoints arrive in Phase 2."
+        "calculation, and analysis platform. Exposes the six engineering "
+        "calculators (stress-strain, beam, Mohr's circle, Reynolds "
+        "number, Bernoulli, SDOF vibration) as a thin REST layer over "
+        "the framework-agnostic calculations/ engine, plus a unit "
+        "metadata endpoint for frontend dropdowns. Authentication, "
+        "history/projects, and learning content arrive in later phases."
     ),
-    "VERSION": "0.1.0",
+    "VERSION": "0.2.0",
     "SERVE_INCLUDE_SCHEMA": False,
 }

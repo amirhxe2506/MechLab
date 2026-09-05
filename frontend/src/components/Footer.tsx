@@ -30,85 +30,31 @@ const sections = [
 
 export default function Footer() {
   return (
-    <footer
-      style={{
-        backgroundColor: "#060b18",
-        borderTop: "1px solid rgba(255,255,255,0.06)",
-        padding: "56px 24px 32px",
-        marginTop: "auto",
-      }}
-    >
-      <div style={{ maxWidth: 1280, margin: "0 auto" }}>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "2fr 1fr 1fr 1fr",
-            gap: 40,
-            marginBottom: 48,
-          }}
-        >
+    <footer className="bg-[#060b18] border-t border-white/5 pt-14 px-6 pb-8 mt-auto">
+      <div className="max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-10 mb-12">
           {/* Brand */}
-          <div>
-            <div
-              style={{
-                fontFamily: "DM Sans, system-ui, sans-serif",
-                fontWeight: 700,
-                fontSize: 20,
-                color: "#e2e8f0",
-                letterSpacing: "-0.025em",
-                marginBottom: 12,
-              }}
-            >
-              Mech<span style={{ color: "#3b82f6" }}>Lab</span>
+          <div className="lg:col-span-2">
+            <div className="font-display font-bold text-xl text-slate-200 tracking-tight mb-3">
+              Mech<span className="text-blue-500">Lab</span>
             </div>
-            <p style={{ color: "#475569", fontSize: 14, lineHeight: 1.7, maxWidth: 260, margin: 0 }}>
+            <p className="text-slate-500 text-sm leading-relaxed max-w-[260px] m-0">
               A digital engineering workspace for Mechanical Engineering students.
               Learn, calculate, and analyze in one integrated platform.
             </p>
-            <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
-              <span
-                style={{
-                  fontSize: 11,
-                  fontFamily: "JetBrains Mono, monospace",
-                  color: "#334155",
-                  backgroundColor: "rgba(255,255,255,0.03)",
-                  border: "1px solid rgba(255,255,255,0.06)",
-                  padding: "3px 8px",
-                  borderRadius: 4,
-                }}
-              >
-                CS50x Final Project
-              </span>
-            </div>
           </div>
 
           {sections.map((s) => (
             <div key={s.title}>
-              <div
-                style={{
-                  fontSize: 11,
-                  fontWeight: 600,
-                  letterSpacing: "0.08em",
-                  textTransform: "uppercase",
-                  color: "#334155",
-                  marginBottom: 16,
-                }}
-              >
+              <div className="text-[11px] font-semibold tracking-wider uppercase text-slate-600 mb-4">
                 {s.title}
               </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <div className="flex flex-col gap-2.5">
                 {s.links.map((l) => (
                   <Link
                     key={l.label}
                     to={l.href}
-                    style={{
-                      fontSize: 14,
-                      color: "#475569",
-                      textDecoration: "none",
-                      transition: "color 0.15s ease",
-                    }}
-                    onMouseEnter={(e) => ((e.target as HTMLAnchorElement).style.color = "#94a3b8")}
-                    onMouseLeave={(e) => ((e.target as HTMLAnchorElement).style.color = "#475569")}
+                    className="text-sm text-slate-500 no-underline transition-colors duration-150 hover:text-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-sm inline-block w-max"
                   >
                     {l.label}
                   </Link>
@@ -118,22 +64,12 @@ export default function Footer() {
           ))}
         </div>
 
-        <div
-          style={{
-            borderTop: "1px solid rgba(255,255,255,0.05)",
-            paddingTop: 24,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            flexWrap: "wrap",
-            gap: 12,
-          }}
-        >
-          <p style={{ margin: 0, fontSize: 13, color: "#334155" }}>
-            © 2024 MechLab. Built for CS50x Final Project.
+        <div className="border-t border-white/5 pt-6 flex items-center justify-between flex-wrap gap-3">
+          <p className="m-0 text-[13px] text-slate-600">
+            © {new Date().getFullYear()} MechLab.
           </p>
-          <div style={{ display: "flex", gap: 24 }}>
-            <span style={{ fontSize: 13, color: "#334155" }}>
+          <div className="flex gap-6">
+            <span className="text-[13px] text-slate-600">
               React + Vite + Python + Django
             </span>
           </div>

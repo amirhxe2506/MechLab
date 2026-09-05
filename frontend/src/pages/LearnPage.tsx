@@ -115,51 +115,25 @@ export default function LearnPage() {
   };
 
   return (
-    <div style={{ maxWidth: 1280, margin: "0 auto", padding: "48px 24px" }}>
+    <div className="max-w-7xl mx-auto py-12 px-6">
       {/* Page header */}
-      <div style={{ marginBottom: 48 }}>
-        <div style={{ fontSize: 11, fontFamily: "JetBrains Mono, monospace", color: "#3b82f6", letterSpacing: "0.1em", marginBottom: 10 }}>
+      <div className="mb-12">
+        <div className="text-[11px] font-mono text-blue-500 tracking-widest mb-2.5">
           LEARNING PLATFORM
         </div>
-        <h1
-          style={{
-            fontFamily: "DM Sans, system-ui, sans-serif",
-            fontSize: "clamp(1.6rem, 3vw, 2.2rem)",
-            fontWeight: 700,
-            color: "#f1f5f9",
-            margin: "0 0 12px",
-            letterSpacing: "-0.03em",
-          }}
-        >
+        <h1 className="font-display text-[clamp(1.6rem,3vw,2.2rem)] font-bold text-slate-100 mb-3 tracking-tight">
           Engineering Courses
         </h1>
-        <p style={{ fontSize: 15, color: "#475569", margin: 0 }}>
+        <p className="text-[15px] text-slate-600 m-0">
           Structured courses with chapters, topics, and integrated calculators.
         </p>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "300px 1fr", gap: 24 }}>
+      <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-6">
         {/* Sidebar: course list */}
         <aside>
-          <div
-            style={{
-              backgroundColor: "#0c1528",
-              border: "1px solid rgba(255,255,255,0.07)",
-              borderRadius: 10,
-              overflow: "hidden",
-              marginBottom: 16,
-            }}
-          >
-            <div
-              style={{
-                padding: "12px 16px",
-                borderBottom: "1px solid rgba(255,255,255,0.05)",
-                fontSize: 11,
-                fontFamily: "JetBrains Mono, monospace",
-                color: "#334155",
-                letterSpacing: "0.06em",
-              }}
-            >
+          <div className="bg-[#0c1528] border border-white/5 rounded-xl overflow-hidden mb-4">
+            <div className="py-3 px-4 border-b border-white/5 text-[11px] font-mono text-slate-600 tracking-wider">
               COURSES
             </div>
             {courses.map((c) => (
@@ -169,45 +143,21 @@ export default function LearnPage() {
                   setActive(c.id);
                   setExpanded([]);
                 }}
+                className="w-full text-left py-3.5 px-4 bg-transparent border-none border-l-4 cursor-pointer flex items-center justify-between border-b border-white/5 transition-colors focus:outline-none"
                 style={{
-                  width: "100%",
-                  textAlign: "left",
-                  padding: "14px 16px",
-                  backgroundColor: active === c.id ? `${c.accent}10` : "transparent",
-                  border: "none",
-                  borderLeft: active === c.id ? `3px solid ${c.accent}` : "3px solid transparent",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  borderBottom: "1px solid rgba(255,255,255,0.04)",
-                  transition: "background-color 0.15s ease",
-                }}
-                onMouseEnter={(e) => {
-                  if (active !== c.id)
-                    (e.currentTarget as HTMLButtonElement).style.backgroundColor = "rgba(255,255,255,0.02)";
-                }}
-                onMouseLeave={(e) => {
-                  if (active !== c.id)
-                    (e.currentTarget as HTMLButtonElement).style.backgroundColor = "transparent";
+                  borderLeftColor: active === c.id ? c.accent : "transparent",
+                  backgroundColor: active === c.id ? `${c.accent}15` : "transparent",
                 }}
               >
                 <div>
-                  <div
-                    style={{
-                      fontSize: 14,
-                      fontWeight: 600,
-                      color: active === c.id ? "#e2e8f0" : "#64748b",
-                      fontFamily: "DM Sans, system-ui, sans-serif",
-                    }}
-                  >
+                  <div className={`text-sm font-semibold font-display ${active === c.id ? 'text-slate-200' : 'text-slate-500 hover:text-slate-400'}`}>
                     {c.title}
                   </div>
-                  <div style={{ fontSize: 11, color: "#334155", fontFamily: "JetBrains Mono, monospace", marginTop: 2 }}>
+                  <div className="text-[11px] text-slate-600 font-mono mt-0.5">
                     {c.subtitle}
                   </div>
                 </div>
-                <span style={{ fontSize: 11, color: "#334155", fontFamily: "JetBrains Mono, monospace" }}>
+                <span className="text-[11px] text-slate-600 font-mono">
                   {c.topics} topics
                 </span>
               </button>
@@ -215,15 +165,8 @@ export default function LearnPage() {
           </div>
 
           {/* Quick links */}
-          <div
-            style={{
-              backgroundColor: "#0c1528",
-              border: "1px solid rgba(255,255,255,0.07)",
-              borderRadius: 10,
-              padding: 16,
-            }}
-          >
-            <div style={{ fontSize: 11, fontFamily: "JetBrains Mono, monospace", color: "#334155", letterSpacing: "0.06em", marginBottom: 12 }}>
+          <div className="bg-[#0c1528] border border-white/5 rounded-xl p-4">
+            <div className="text-[11px] font-mono text-slate-600 tracking-wider mb-3">
               RELATED TOOLS
             </div>
             {[
@@ -235,19 +178,7 @@ export default function LearnPage() {
               <Link
                 key={l.href}
                 to={l.href}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  padding: "8px 0",
-                  borderBottom: "1px solid rgba(255,255,255,0.04)",
-                  color: "#64748b",
-                  textDecoration: "none",
-                  fontSize: 13,
-                  transition: "color 0.15s ease",
-                }}
-                onMouseEnter={(e) => ((e.target as HTMLAnchorElement).style.color = "#3b82f6")}
-                onMouseLeave={(e) => ((e.target as HTMLAnchorElement).style.color = "#64748b")}
+                className="flex items-center gap-2 py-2 border-b border-white/5 text-slate-500 hover:text-blue-500 no-underline text-[13px] transition-colors"
               >
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <path d="M9 18l6-6-6-6" />
@@ -262,104 +193,68 @@ export default function LearnPage() {
         <div>
           {/* Course header */}
           <div
-            style={{
-              backgroundColor: "#0c1528",
-              border: "1px solid rgba(255,255,255,0.07)",
-              borderTop: `2px solid ${course.accent}`,
-              borderRadius: 10,
-              padding: 28,
-              marginBottom: 20,
-            }}
+            className="bg-[#0c1528] border border-white/5 rounded-xl p-7 mb-5"
+            style={{ borderTop: `2px solid ${course.accent}` }}
           >
-            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
+            <div className="flex items-start justify-between flex-wrap gap-4">
               <div>
-                <div style={{ fontSize: 11, fontFamily: "JetBrains Mono, monospace", color: course.accent, letterSpacing: "0.06em", marginBottom: 8 }}>
+                <div className="text-[11px] font-mono tracking-wider mb-2" style={{ color: course.accent }}>
                   {course.subtitle}
                 </div>
-                <h2
-                  style={{
-                    fontFamily: "DM Sans, system-ui, sans-serif",
-                    fontSize: 24,
-                    fontWeight: 700,
-                    color: "#f1f5f9",
-                    margin: "0 0 10px",
-                    letterSpacing: "-0.025em",
-                  }}
-                >
+                <h2 className="font-display text-2xl font-bold text-slate-100 mb-2.5 tracking-tight">
                   {course.title}
                 </h2>
-                <p style={{ fontSize: 14, color: "#64748b", margin: 0, lineHeight: 1.65, maxWidth: 540 }}>
+                <p className="text-sm text-slate-500 m-0 leading-relaxed max-w-xl">
                   {course.description}
                 </p>
               </div>
-              <div style={{ display: "flex", gap: 20 }}>
-                <div style={{ textAlign: "center" }}>
-                  <div style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 22, fontWeight: 600, color: "#e2e8f0" }}>
+              <div className="flex gap-5">
+                <div className="text-center">
+                  <div className="font-mono text-[22px] font-semibold text-slate-200">
                     {course.chapters.length}
                   </div>
-                  <div style={{ fontSize: 11, color: "#334155" }}>Chapters</div>
+                  <div className="text-[11px] text-slate-600">Chapters</div>
                 </div>
-                <div style={{ textAlign: "center" }}>
-                  <div style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 22, fontWeight: 600, color: "#e2e8f0" }}>
+                <div className="text-center">
+                  <div className="font-mono text-[22px] font-semibold text-slate-200">
                     {course.topics}
                   </div>
-                  <div style={{ fontSize: 11, color: "#334155" }}>Topics</div>
+                  <div className="text-[11px] text-slate-600">Topics</div>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Chapters */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <div className="flex flex-col gap-2">
             {course.chapters.map((chapter, ci) => {
               const isOpen = expanded.includes(chapter.title);
               return (
                 <div
                   key={chapter.title}
-                  style={{
-                    backgroundColor: "#0c1528",
-                    border: "1px solid rgba(255,255,255,0.07)",
-                    borderRadius: 8,
-                    overflow: "hidden",
-                  }}
+                  className="bg-[#0c1528] border border-white/5 rounded-lg overflow-hidden"
                 >
                   <button
                     onClick={() => toggleChapter(chapter.title)}
-                    style={{
-                      width: "100%",
-                      textAlign: "left",
-                      padding: "16px 20px",
-                      background: "none",
-                      border: "none",
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      gap: 12,
-                    }}
+                    className="w-full text-left py-4 px-5 bg-transparent border-none cursor-pointer flex items-center justify-between gap-3 hover:bg-white/5 transition-colors focus:outline-none"
                   >
-                    <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                    <div className="flex items-center gap-3.5">
                       <span
+                        className="font-mono text-[11px] py-0.5 px-2 rounded min-w-[32px] text-center"
                         style={{
-                          fontFamily: "JetBrains Mono, monospace",
-                          fontSize: 11,
                           color: course.accent,
                           backgroundColor: `${course.accent}12`,
                           border: `1px solid ${course.accent}25`,
-                          padding: "2px 7px",
-                          borderRadius: 4,
-                          minWidth: 32,
-                          textAlign: "center",
                         }}
                       >
                         {String(ci + 1).padStart(2, "0")}
                       </span>
-                      <span style={{ fontFamily: "DM Sans, system-ui, sans-serif", fontSize: 15, fontWeight: 600, color: "#e2e8f0" }}>
+                      <span className="font-display text-[15px] font-semibold text-slate-200">
                         {chapter.title}
                       </span>
                     </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                      <span style={{ fontSize: 12, color: "#334155" }}>{chapter.topics.length} topics</span>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs text-slate-600">{chapter.topics.length} topics</span>
                       <svg
                         width="16"
                         height="16"
@@ -367,7 +262,7 @@ export default function LearnPage() {
                         fill="none"
                         stroke="#475569"
                         strokeWidth="2"
-                        style={{ transform: isOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s ease" }}
+                        className={`transition-transform duration-200 ${isOpen ? "rotate-180" : "rotate-0"}`}
                       >
                         <path d="M6 9l6 6 6-6" />
                       </svg>
@@ -375,44 +270,16 @@ export default function LearnPage() {
                   </button>
 
                   {isOpen && (
-                    <div style={{ borderTop: "1px solid rgba(255,255,255,0.05)", padding: "8px 0" }}>
+                    <div className="border-t border-white/5 py-2">
                       {chapter.topics.map((topic) => (
                         <div
                           key={topic}
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 14,
-                            padding: "10px 20px 10px 60px",
-                            cursor: "pointer",
-                            transition: "background-color 0.15s ease",
-                            borderBottom: "1px solid rgba(255,255,255,0.03)",
-                          }}
-                          onMouseEnter={(e) => ((e.currentTarget as HTMLDivElement).style.backgroundColor = "rgba(255,255,255,0.02)")}
-                          onMouseLeave={(e) => ((e.currentTarget as HTMLDivElement).style.backgroundColor = "transparent")}
+                          className="flex items-center gap-3.5 py-2.5 px-5 pl-16 cursor-pointer transition-colors hover:bg-white/5 border-b border-white/5 last:border-0"
                         >
-                          <div
-                            style={{
-                              width: 6,
-                              height: 6,
-                              borderRadius: "50%",
-                              backgroundColor: "rgba(255,255,255,0.12)",
-                              flexShrink: 0,
-                            }}
-                          />
-                          <span style={{ fontSize: 14, color: "#64748b" }}>{topic}</span>
-                          <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
-                            <span
-                              style={{
-                                fontSize: 10,
-                                fontFamily: "JetBrains Mono, monospace",
-                                padding: "2px 6px",
-                                borderRadius: 3,
-                                backgroundColor: "rgba(255,255,255,0.04)",
-                                border: "1px solid rgba(255,255,255,0.06)",
-                                color: "#334155",
-                              }}
-                            >
+                          <div className="w-1.5 h-1.5 rounded-full bg-white/10 shrink-0" />
+                          <span className="text-sm text-slate-500">{topic}</span>
+                          <div className="ml-auto flex gap-2">
+                            <span className="text-[10px] font-mono py-0.5 px-1.5 rounded bg-white/5 border border-white/10 text-slate-600">
                               Topic
                             </span>
                           </div>
@@ -426,32 +293,16 @@ export default function LearnPage() {
           </div>
 
           {/* Expand all helper */}
-          <div style={{ marginTop: 16, display: "flex", gap: 10 }}>
+          <div className="mt-4 flex gap-2.5">
             <button
               onClick={() => setExpanded(course.chapters.map((c) => c.title))}
-              style={{
-                padding: "7px 14px",
-                fontSize: 12,
-                backgroundColor: "rgba(255,255,255,0.04)",
-                border: "1px solid rgba(255,255,255,0.07)",
-                borderRadius: 6,
-                color: "#64748b",
-                cursor: "pointer",
-              }}
+              className="py-1.5 px-3.5 text-xs bg-white/5 border border-white/10 rounded-md text-slate-500 hover:text-slate-300 hover:bg-white/10 cursor-pointer transition-colors focus:outline-none"
             >
               Expand All
             </button>
             <button
               onClick={() => setExpanded([])}
-              style={{
-                padding: "7px 14px",
-                fontSize: 12,
-                backgroundColor: "transparent",
-                border: "1px solid rgba(255,255,255,0.07)",
-                borderRadius: 6,
-                color: "#475569",
-                cursor: "pointer",
-              }}
+              className="py-1.5 px-3.5 text-xs bg-transparent border border-white/10 rounded-md text-slate-500 hover:text-slate-300 hover:bg-white/5 cursor-pointer transition-colors focus:outline-none"
             >
               Collapse All
             </button>

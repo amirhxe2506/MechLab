@@ -1,115 +1,128 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { useStressCalculator } from "../../hooks/useStressCalculator";
+import { useDebounce } from "../../hooks/useDebounce";
+import { EngineeringValue } from "../../components/EngineeringValue";
+import type { StressInput, StressResult } from "../../api/calculators";
+import { AxiosError } from "axios";
 
 type UnitSystem = "SI" | "Imperial";
 
-interface Inputs {
-  force: string;
-  area: string;
-  modulus: string;
-  length: string;
-}
+// Client-side validation: mostly to prevent sending obvious garbage.
+const formSchema = z.object({
+  force: z.coerce.number(),
+  area: z.coerce.number().positive("Must be positive"),
+  modulus: z.coerce.number().positive("Must be positive"),
+  length: z.coerce.number().positive("Must be positive"),
+});
 
-interface Results {
-  stress: number;
-  strain: number;
-  deformation: number;
-}
+type FormValues = z.infer<typeof formSchema>;
 
-const unitLabels: Record<UnitSystem, { force: string; area: string; modulus: string; length: string; stress: string; deformation: string }> = {
-  SI: { force: "N", area: "m²", modulus: "GPa", length: "m", stress: "Pa", deformation: "m" },
-  Imperial: { force: "lbf", area: "in²", modulus: "psi", length: "in", stress: "psi", deformation: "in" },
+const unitLabels: Record<UnitSystem, { force: string; area: string; modulus: string; length: string }> = {
+  SI: { force: "N", area: "m2", modulus: "GPa", length: "m" },
+  Imperial: { force: "lbf", area: "in2", modulus: "psi", length: "in" },
 };
 
-const exampleValues: Record<UnitSystem, Inputs> = {
-  SI: { force: "50000", area: "0.002", modulus: "200", length: "1.5" },
-  Imperial: { force: "10000", area: "0.5", modulus: "29000000", length: "60" },
+const exampleValues: Record<UnitSystem, FormValues> = {
+  SI: { force: 50000, area: 0.002, modulus: 200, length: 1.5 },
+  Imperial: { force: 10000, area: 0.5, modulus: 29000000, length: 60 },
 };
-
-function calculate(inputs: Inputs, units: UnitSystem): Results | null {
-  const F = parseFloat(inputs.force);
-  const A = parseFloat(inputs.area);
-  const E_raw = parseFloat(inputs.modulus);
-  const L = parseFloat(inputs.length);
-
-  if ([F, A, E_raw, L].some(isNaN)) return null;
-  if (A <= 0 || E_raw <= 0 || L <= 0) return null;
-
-  // Convert modulus: SI given in GPa → Pa; Imperial stays as psi
-  const E = units === "SI" ? E_raw * 1e9 : E_raw;
-
-  const stress = F / A;
-  const strain = stress / E;
-  const deformation = strain * L;
-
-  return { stress, strain, deformation };
-}
-
-function fmt(n: number, decimals = 4): string {
-  if (Math.abs(n) >= 1e9) return (n / 1e9).toFixed(3) + "G";
-  if (Math.abs(n) >= 1e6) return (n / 1e6).toFixed(3) + "M";
-  if (Math.abs(n) >= 1e3) return (n / 1e3).toFixed(3) + "k";
-  return n.toFixed(decimals);
-}
 
 export default function StressStrainPage() {
   const [units, setUnits] = useState<UnitSystem>("SI");
-  const [inputs, setInputs] = useState<Inputs>(exampleValues.SI);
-  const [errors, setErrors] = useState<Partial<Inputs>>({});
 
+  const {
+    control,
+    handleSubmit,
+    watch,
+    reset,
+    formState: { errors: formErrors, isValid },
+  } = useForm<FormValues>({
+    resolver: zodResolver(formSchema) as any,
+    defaultValues: exampleValues.SI,
+    mode: "onChange",
+  });
+
+  const currentFormValues = watch();
+  const debouncedValues = useDebounce(currentFormValues, 300);
+
+  // Derive API input payload
   const u = unitLabels[units];
-  const results = calculate(inputs, units);
 
-  const setInput = (key: keyof Inputs) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInputs((prev) => ({ ...prev, [key]: e.target.value }));
-    setErrors((prev) => ({ ...prev, [key]: undefined }));
+  const apiInput: StressInput = {
+    force: Number(debouncedValues.force),
+    force_unit: u.force,
+    area: Number(debouncedValues.area),
+    area_unit: u.area,
+    youngs_modulus: Number(debouncedValues.modulus),
+    youngs_modulus_unit: units === "SI" ? "GPa" : u.modulus,
+    original_length: Number(debouncedValues.length),
+    original_length_unit: u.length,
+    output_unit_system: units,
   };
 
-  const validateInput = (key: keyof Inputs) => () => {
-    const val = parseFloat(inputs[key]);
-    if (isNaN(val)) {
-      setErrors((prev) => ({ ...prev, [key]: "Invalid number" }));
-    } else if (key !== "force" && val <= 0) {
-      setErrors((prev) => ({ ...prev, [key]: "Must be positive" }));
-    }
-  };
+  const { data: results, isFetching, error: apiError } = useStressCalculator(apiInput, isValid);
 
   const loadExample = () => {
-    setInputs(exampleValues[units]);
-    setErrors({});
+    reset(exampleValues[units]);
+  };
+
+  const handleUnitChange = (sys: UnitSystem) => {
+    setUnits(sys);
+    reset(exampleValues[sys]);
+  };
+
+  // Helper to extract backend validation errors (HTTP 400)
+  let backendErrors: Record<string, string[]> = {};
+  let serverDown = false;
+
+  if (apiError instanceof AxiosError) {
+    if (apiError.response && apiError.response.status === 400) {
+      backendErrors = apiError.response.data as Record<string, string[]>;
+    } else if (!apiError.response || apiError.response.status >= 500) {
+      serverDown = true;
+    }
+  }
+
+  // Combine client and server errors for display
+  const getError = (field: keyof FormValues | string) => {
+    // 1. Zod client error
+    if (field in formErrors && formErrors[field as keyof FormValues]) {
+      return formErrors[field as keyof FormValues]?.message;
+    }
+    // 2. Backend validation error mapped to form fields
+    if (field === "modulus" && backendErrors["youngs_modulus"]) return backendErrors["youngs_modulus"][0];
+    if (field === "length" && backendErrors["original_length"]) return backendErrors["original_length"][0];
+    if (backendErrors[field]) return backendErrors[field][0];
+
+    return undefined;
   };
 
   return (
-    <div style={{ maxWidth: 1280, margin: "0 auto", padding: "48px 24px" }}>
+    <div className="max-w-7xl mx-auto py-12 px-6">
       {/* Breadcrumb */}
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 32, fontSize: 13, color: "#334155" }}>
-        <Link to="/tools" style={{ color: "#475569", textDecoration: "none" }}>Tools</Link>
+      <div className="flex items-center gap-2 mb-8 text-[13px] text-slate-600">
+        <Link to="/tools" className="text-slate-500 hover:text-slate-400 no-underline transition-colors">Tools</Link>
         <span>→</span>
-        <span style={{ color: "#64748b" }}>Stress & Strain Calculator</span>
+        <span className="text-slate-400">Stress & Strain Calculator</span>
       </div>
 
       {/* Page header */}
-      <div style={{ marginBottom: 36 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
-          <div style={{ fontSize: 11, fontFamily: "JetBrains Mono, monospace", color: "#f59e0b", letterSpacing: "0.08em" }}>
+      <div className="mb-9">
+        <div className="flex items-center gap-3 mb-2.5">
+          <div className="text-[11px] font-mono text-amber-500 tracking-[0.08em]">
             MECHANICS
           </div>
-          <div style={{ width: 1, height: 12, backgroundColor: "rgba(255,255,255,0.1)" }} />
-          <div style={{ fontSize: 11, color: "#334155" }}>Strength of Materials</div>
+          <div className="w-px h-3 bg-white/10" />
+          <div className="text-[11px] text-slate-500">Strength of Materials</div>
         </div>
-        <h1
-          style={{
-            fontFamily: "DM Sans, system-ui, sans-serif",
-            fontSize: "clamp(1.5rem, 3vw, 2rem)",
-            fontWeight: 700,
-            color: "#f1f5f9",
-            margin: "0 0 10px",
-            letterSpacing: "-0.03em",
-          }}
-        >
+        <h1 className="font-display text-[clamp(1.5rem,3vw,2rem)] font-bold text-slate-100 mb-2.5 tracking-tight">
           Stress &amp; Strain Calculator
         </h1>
-        <p style={{ fontSize: 15, color: "#475569", margin: 0 }}>
+        <p className="text-[15px] text-slate-500 m-0">
           Compute normal stress, axial strain, and deformation for a prismatic bar under axial loading.
         </p>
       </div>
@@ -117,41 +130,24 @@ export default function StressStrainPage() {
       {/* Concept panel */}
       <ConceptPanel />
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, marginTop: 28 }}>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-7">
         {/* Input panel */}
-        <div
-          style={{
-            backgroundColor: "#0c1528",
-            border: "1px solid rgba(255,255,255,0.07)",
-            borderRadius: 12,
-            padding: 28,
-          }}
-        >
+        <div className="bg-[#0c1528] border border-white/5 rounded-xl p-7 flex flex-col">
           {/* Unit system toggle */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
-            <div style={{ fontSize: 12, fontFamily: "JetBrains Mono, monospace", color: "#334155", letterSpacing: "0.06em" }}>
+          <div className="flex items-center justify-between mb-6">
+            <div className="text-xs font-mono text-slate-600 tracking-wider">
               INPUT PARAMETERS
             </div>
-            <div style={{ display: "flex", backgroundColor: "#060b18", borderRadius: 6, padding: 2, border: "1px solid rgba(255,255,255,0.06)" }}>
+            <div className="flex bg-[#060b18] rounded-md p-0.5 border border-white/5">
               {(["SI", "Imperial"] as UnitSystem[]).map((sys) => (
                 <button
                   key={sys}
-                  onClick={() => {
-                    setUnits(sys);
-                    setInputs(exampleValues[sys]);
-                    setErrors({});
-                  }}
-                  style={{
-                    padding: "5px 14px",
-                    borderRadius: 4,
-                    fontSize: 12,
-                    fontWeight: 600,
-                    border: "none",
-                    cursor: "pointer",
-                    backgroundColor: units === sys ? "#3b82f6" : "transparent",
-                    color: units === sys ? "#fff" : "#475569",
-                    transition: "all 0.15s ease",
-                  }}
+                  onClick={() => handleUnitChange(sys)}
+                  className={`py-1 px-3.5 rounded text-xs font-semibold border-none cursor-pointer transition-all duration-150 focus:outline-none ${
+                    units === sys
+                      ? "bg-blue-500 text-white shadow-sm"
+                      : "bg-transparent text-slate-500 hover:text-slate-300"
+                  }`}
                 >
                   {sys}
                 </button>
@@ -159,101 +155,115 @@ export default function StressStrainPage() {
             </div>
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            <InputField
-              label="Applied Force"
-              symbol="F"
-              value={inputs.force}
-              unit={u.force}
-              error={errors.force}
-              onChange={setInput("force")}
-              onBlur={validateInput("force")}
-              placeholder="e.g. 50000"
+          <form className="flex flex-col gap-4 flex-1">
+            <Controller
+              name="force"
+              control={control}
+              render={({ field }) => (
+                <InputField
+                  label="Applied Force"
+                  symbol="F"
+                  value={field.value}
+                  unit={u.force}
+                  error={getError("force")}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  placeholder="e.g. 50000"
+                />
+              )}
             />
-            <InputField
-              label="Cross-sectional Area"
-              symbol="A"
-              value={inputs.area}
-              unit={u.area}
-              error={errors.area}
-              onChange={setInput("area")}
-              onBlur={validateInput("area")}
-              placeholder="e.g. 0.002"
-              note="Must be positive"
+            <Controller
+              name="area"
+              control={control}
+              render={({ field }) => (
+                <InputField
+                  label="Cross-sectional Area"
+                  symbol="A"
+                  value={field.value}
+                  unit={u.area}
+                  error={getError("area")}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  placeholder="e.g. 0.002"
+                  note="Must be positive"
+                />
+              )}
             />
-            <InputField
-              label="Young's Modulus"
-              symbol="E"
-              value={inputs.modulus}
-              unit={units === "SI" ? "GPa" : u.modulus}
-              error={errors.modulus}
-              onChange={setInput("modulus")}
-              onBlur={validateInput("modulus")}
-              placeholder={units === "SI" ? "e.g. 200 (Steel)" : "e.g. 29000000"}
+            <Controller
+              name="modulus"
+              control={control}
+              render={({ field }) => (
+                <InputField
+                  label="Young's Modulus"
+                  symbol="E"
+                  value={field.value}
+                  unit={units === "SI" ? "GPa" : u.modulus}
+                  error={getError("modulus")}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  placeholder={units === "SI" ? "e.g. 200 (Steel)" : "e.g. 29000000"}
+                />
+              )}
             />
-            <InputField
-              label="Original Length"
-              symbol="L"
-              value={inputs.length}
-              unit={u.length}
-              error={errors.length}
-              onChange={setInput("length")}
-              onBlur={validateInput("length")}
-              placeholder="e.g. 1.5"
+            <Controller
+              name="length"
+              control={control}
+              render={({ field }) => (
+                <InputField
+                  label="Original Length"
+                  symbol="L"
+                  value={field.value}
+                  unit={u.length}
+                  error={getError("length")}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  placeholder="e.g. 1.5"
+                />
+              )}
             />
-          </div>
+          </form>
 
           <button
             onClick={loadExample}
-            style={{
-              marginTop: 20,
-              padding: "7px 16px",
-              fontSize: 12,
-              backgroundColor: "rgba(255,255,255,0.04)",
-              border: "1px solid rgba(255,255,255,0.08)",
-              borderRadius: 6,
-              color: "#64748b",
-              cursor: "pointer",
-            }}
+            type="button"
+            className="mt-5 py-1.5 px-4 text-xs bg-white/5 border border-white/10 rounded-md text-slate-500 hover:text-slate-300 hover:bg-white/10 cursor-pointer transition-colors focus:outline-none self-start"
           >
             Load Example Values
           </button>
         </div>
 
         {/* Results panel */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          {results ? (
+        <div className="flex flex-col gap-4">
+          {serverDown ? (
+            <div className="bg-[#0c1528] border border-red-500/20 rounded-xl p-10 flex flex-col items-center justify-center text-center h-full min-h-[200px]">
+              <div className="text-red-400 mb-2 font-semibold">Service Unavailable</div>
+              <div className="text-slate-500 text-sm">
+                The calculation engine is currently offline. Please ensure the backend is running.
+              </div>
+            </div>
+          ) : !isValid ? (
+            <div className="bg-[#0c1528] border border-white/5 rounded-xl p-10 flex items-center justify-center text-slate-600 text-sm text-center h-full min-h-[200px]">
+              Enter valid parameters to compute results.
+            </div>
+          ) : results ? (
             <>
-              <ResultsPanel results={results} units={u} unitSystem={units} />
-              <StressBarChart stress={results.stress} />
+              <ResultsPanel results={results} isFetching={isFetching} />
+              <StressBarChart stressSiPa={results.values_si.stress} />
             </>
           ) : (
-            <div
-              style={{
-                backgroundColor: "#0c1528",
-                border: "1px solid rgba(255,255,255,0.07)",
-                borderRadius: 12,
-                padding: 40,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "#334155",
-                fontSize: 14,
-                textAlign: "center",
-              }}
-            >
-              Enter valid parameters to compute results.
+            <div className="bg-[#0c1528] border border-white/5 rounded-xl p-10 flex items-center justify-center text-slate-600 text-sm text-center h-full min-h-[200px]">
+              {isFetching ? "Calculating..." : "Waiting for input..."}
             </div>
           )}
         </div>
       </div>
 
       {/* Learn more */}
-      <div style={{ marginTop: 28, padding: "16px 20px", backgroundColor: "#0c1528", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 8, display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
-        <span style={{ fontSize: 13, color: "#475569" }}>Related:</span>
-        <Link to="/formulas" style={{ fontSize: 13, color: "#3b82f6", textDecoration: "none" }}>Formula Library</Link>
-        <Link to="/tools/mohrs-circle" style={{ fontSize: 13, color: "#3b82f6", textDecoration: "none" }}>Mohr's Circle →</Link>
-        <Link to="/learn" style={{ fontSize: 13, color: "#3b82f6", textDecoration: "none" }}>Strength of Materials Course →</Link>
+      <div className="mt-7 py-4 px-5 bg-[#0c1528] border border-white/5 rounded-lg flex items-center gap-4 flex-wrap">
+        <span className="text-[13px] text-slate-500">Related:</span>
+        <Link to="/formulas" className="text-[13px] text-blue-500 hover:text-blue-400 no-underline transition-colors">Formula Library</Link>
+        <Link to="/tools/mohrs-circle" className="text-[13px] text-blue-500 hover:text-blue-400 no-underline transition-colors">Mohr's Circle →</Link>
+        <Link to="/learn" className="text-[13px] text-blue-500 hover:text-blue-400 no-underline transition-colors">Strength of Materials Course →</Link>
       </div>
     </div>
   );
@@ -265,51 +275,42 @@ function ConceptPanel() {
   const [open, setOpen] = useState(false);
 
   return (
-    <div
-      style={{
-        backgroundColor: "#0c1528",
-        border: "1px solid rgba(255,255,255,0.07)",
-        borderRadius: 10,
-        overflow: "hidden",
-      }}
-    >
+    <div className="bg-[#0c1528] border border-white/5 rounded-xl overflow-hidden transition-colors duration-200">
       <button
         onClick={() => setOpen((v) => !v)}
-        style={{
-          width: "100%",
-          textAlign: "left",
-          padding: "14px 20px",
-          background: "none",
-          border: "none",
-          cursor: "pointer",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}
+        className="w-full text-left py-3.5 px-5 bg-transparent border-none cursor-pointer flex items-center justify-between hover:bg-white/5 transition-colors focus:outline-none"
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <span style={{ fontSize: 14, fontWeight: 600, color: "#e2e8f0", fontFamily: "DM Sans, system-ui, sans-serif" }}>
+        <div className="flex items-center gap-2.5">
+          <span className="text-sm font-semibold text-slate-200 font-display">
             Concept &amp; Governing Equations
           </span>
         </div>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#475569" strokeWidth="2" style={{ transform: open ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }}>
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="#475569"
+          strokeWidth="2"
+          className={`transition-transform duration-200 ${open ? "rotate-180" : "rotate-0"}`}
+        >
           <path d="M6 9l6 6 6-6" />
         </svg>
       </button>
       {open && (
-        <div style={{ borderTop: "1px solid rgba(255,255,255,0.05)", padding: 20 }}>
-          <p style={{ fontSize: 14, color: "#64748b", lineHeight: 1.7, margin: "0 0 16px" }}>
+        <div className="border-t border-white/5 p-5 bg-[#060b18]/50">
+          <p className="text-sm text-slate-500 leading-relaxed m-0 mb-4 max-w-3xl">
             When an axial force is applied to a structural member, internal stresses are developed. For a member
             with uniform cross-section, these stresses are uniformly distributed.
           </p>
-          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+          <div className="flex gap-3 flex-wrap">
             {["σ = F / A", "ε = σ / E", "δ = ε · L = FL / AE"].map((eq) => (
-              <div key={eq} className="formula-display" style={{ padding: "8px 16px", fontSize: 14 }}>
+              <div key={eq} className="py-2 px-4 bg-[#0c1528] border border-white/5 rounded-md font-mono text-sm text-cyan-500">
                 {eq}
               </div>
             ))}
           </div>
-          <div style={{ marginTop: 16, display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 10 }}>
+          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
             {[
               { sym: "σ", desc: "Normal Stress [Pa]" },
               { sym: "ε", desc: "Axial Strain [dimensionless]" },
@@ -319,9 +320,9 @@ function ConceptPanel() {
               { sym: "E", desc: "Modulus of Elasticity [Pa]" },
               { sym: "L", desc: "Original Length [m]" },
             ].map((v) => (
-              <div key={v.sym} style={{ display: "flex", gap: 10, alignItems: "baseline", fontSize: 13 }}>
-                <span style={{ fontFamily: "JetBrains Mono, monospace", color: "#06b6d4", minWidth: 20 }}>{v.sym}</span>
-                <span style={{ color: "#475569" }}>{v.desc}</span>
+              <div key={v.sym} className="flex gap-2.5 items-baseline text-[13px]">
+                <span className="font-mono text-cyan-500 min-w-[20px]">{v.sym}</span>
+                <span className="text-slate-500">{v.desc}</span>
               </div>
             ))}
           </div>
@@ -346,7 +347,7 @@ function InputField({
 }: {
   label: string;
   symbol: string;
-  value: string;
+  value: number | string;
   unit: string;
   error?: string;
   note?: string;
@@ -356,55 +357,30 @@ function InputField({
 }) {
   return (
     <div>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-        <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 13, color: "#06b6d4" }}>{symbol}</span>
-        <span style={{ fontSize: 13, color: "#64748b" }}>{label}</span>
+      <div className="flex items-center gap-2 mb-1.5">
+        <span className="font-mono text-[13px] text-cyan-500">{symbol}</span>
+        <span className="text-[13px] text-slate-500">{label}</span>
       </div>
       <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 0,
-          border: `1px solid ${error ? "#ef4444" : "rgba(255,255,255,0.08)"}`,
-          borderRadius: 8,
-          overflow: "hidden",
-          backgroundColor: "#060b18",
-          transition: "border-color 0.15s ease",
-        }}
+        className={`flex items-stretch border rounded-lg overflow-hidden bg-[#060b18] transition-colors focus-within:ring-1 focus-within:ring-cyan-500/50 ${
+          error ? "border-red-500/50" : "border-white/10"
+        }`}
       >
         <input
           type="number"
-          value={value}
+          value={value === undefined || Number.isNaN(value) ? "" : value}
           onChange={onChange}
           onBlur={onBlur}
           placeholder={placeholder}
-          style={{
-            flex: 1,
-            padding: "10px 14px",
-            background: "none",
-            border: "none",
-            color: "#e2e8f0",
-            fontSize: 14,
-            fontFamily: "JetBrains Mono, monospace",
-            outline: "none",
-          }}
+          step="any"
+          className="flex-1 py-2.5 px-3.5 bg-transparent border-none text-slate-200 text-sm font-mono outline-none min-w-0"
         />
-        <div
-          style={{
-            padding: "10px 14px",
-            borderLeft: "1px solid rgba(255,255,255,0.06)",
-            fontSize: 12,
-            fontFamily: "JetBrains Mono, monospace",
-            color: "#334155",
-            backgroundColor: "rgba(255,255,255,0.02)",
-            whiteSpace: "nowrap",
-          }}
-        >
+        <div className="py-2.5 px-3.5 border-l border-white/5 text-xs font-mono text-slate-500 bg-white/5 whitespace-nowrap flex items-center">
           {unit}
         </div>
       </div>
-      {error && <div style={{ fontSize: 12, color: "#ef4444", marginTop: 4 }}>{error}</div>}
-      {note && !error && <div style={{ fontSize: 11, color: "#334155", marginTop: 4 }}>{note}</div>}
+      {error && <div className="text-xs text-red-500 mt-1">{error}</div>}
+      {note && !error && <div className="text-[11px] text-slate-600 mt-1">{note}</div>}
     </div>
   );
 }
@@ -413,111 +389,104 @@ function InputField({
 
 function ResultsPanel({
   results,
-  units,
-  unitSystem,
+  isFetching,
 }: {
-  results: Results;
-  units: (typeof unitLabels)["SI"];
-  unitSystem: UnitSystem;
+  results: StressResult;
+  isFetching: boolean;
 }) {
   const rows = [
     {
       label: "Normal Stress",
       symbol: "σ",
-      value: unitSystem === "SI" ? fmt(results.stress / 1e6, 3) : fmt(results.stress, 2),
-      unit: unitSystem === "SI" ? "MPa" : "psi",
-      raw: fmt(results.stress),
-      rawUnit: units.stress,
-      color: "#f59e0b",
+      value: results.stress,
+      unit: results.units.stress,
+      color: "border-l-amber-500",
+      symColor: "text-amber-500",
     },
     {
       label: "Axial Strain",
       symbol: "ε",
-      value: results.strain.toExponential(4),
-      unit: "—",
-      raw: results.strain.toExponential(4),
-      rawUnit: "dimensionless",
-      color: "#3b82f6",
+      value: results.strain,
+      unit: results.units.strain,
+      color: "border-l-blue-500",
+      symColor: "text-blue-500",
     },
     {
       label: "Deformation",
       symbol: "δ",
-      value: fmt(results.deformation, 6),
-      unit: units.deformation,
-      raw: fmt(results.deformation, 6),
-      rawUnit: units.deformation,
-      color: "#22c55e",
+      value: results.deformation,
+      unit: results.units.deformation,
+      color: "border-l-green-500",
+      symColor: "text-green-500",
     },
   ];
 
   return (
-    <div
-      style={{
-        backgroundColor: "#0c1528",
-        border: "1px solid rgba(255,255,255,0.07)",
-        borderRadius: 12,
-        padding: 28,
-      }}
-    >
-      <div style={{ fontSize: 12, fontFamily: "JetBrains Mono, monospace", color: "#334155", letterSpacing: "0.06em", marginBottom: 20 }}>
-        RESULTS
+    <div className={`bg-[#0c1528] border border-white/5 rounded-xl p-7 transition-opacity duration-300 ${isFetching ? 'opacity-70' : 'opacity-100'}`}>
+      <div className="flex items-center justify-between mb-5">
+        <div className="text-xs font-mono text-slate-600 tracking-wider">
+          RESULTS
+        </div>
+        {isFetching && (
+          <div className="text-xs text-blue-400 font-medium animate-pulse">
+            Updating...
+          </div>
+        )}
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div className="flex flex-col gap-3">
         {rows.map((r) => (
           <div
             key={r.symbol}
-            style={{
-              backgroundColor: "#060b18",
-              border: "1px solid rgba(255,255,255,0.05)",
-              borderLeft: `3px solid ${r.color}`,
-              borderRadius: "0 8px 8px 0",
-              padding: "14px 16px",
-            }}
+            className={`bg-[#060b18] border border-white/5 border-l-[3px] rounded-r-lg p-3.5 flex flex-col min-w-0 ${r.color}`}
           >
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 15, color: r.color }}>{r.symbol}</span>
-                <span style={{ fontSize: 13, color: "#64748b" }}>{r.label}</span>
-              </div>
-              <div style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 18, fontWeight: 700, color: "#e2e8f0" }}>
-                {r.value}
-                <span style={{ fontSize: 12, color: "#334155", marginLeft: 6, fontWeight: 400 }}>{r.unit}</span>
-              </div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className={`font-mono text-[15px] ${r.symColor}`}>{r.symbol}</span>
+              <span className="text-[13px] text-slate-500 truncate">{r.label}</span>
+            </div>
+            <div className="pl-6">
+              <EngineeringValue value={r.value} unit={r.unit} precision={4} />
             </div>
           </div>
         ))}
       </div>
 
+      {results.warnings && results.warnings.length > 0 && (
+        <div className="mt-4 flex flex-col gap-2">
+          {results.warnings.map((w, idx) => (
+            <div key={idx} className="flex gap-2 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+              <span className="text-amber-500">⚠</span>
+              <span className="text-xs text-amber-500/90 leading-relaxed">{w}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Validation note */}
-      <div style={{ marginTop: 16, display: "flex", alignItems: "center", gap: 8 }}>
-        <div style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: "#22c55e" }} />
-        <span style={{ fontSize: 12, color: "#22c55e" }}>All inputs valid — results computed</span>
-      </div>
+      {(!results.warnings || results.warnings.length === 0) && (
+        <div className="mt-4 flex items-center gap-2">
+          <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
+          <span className="text-xs text-green-500">All inputs valid — results computed</span>
+        </div>
+      )}
     </div>
   );
 }
 
 // ─── Stress Bar Visual ─────────────────────────────────────────────────────────
 
-function StressBarChart({ stress }: { stress: number }) {
-  const MPa = stress / 1e6;
+function StressBarChart({ stressSiPa }: { stressSiPa: number }) {
+  // Convert backend SI raw value (Pa) to MPa for the bar chart
+  const MPa = stressSiPa / 1e6;
   const levels = [
-    { label: "Aluminum", yield: 270, color: "#a78bfa" },
-    { label: "Steel (mild)", yield: 250, color: "#3b82f6" },
-    { label: "Steel (high)", yield: 690, color: "#06b6d4" },
+    { label: "Aluminum", yield: 270, color: "bg-purple-500" },
+    { label: "Steel (mild)", yield: 250, color: "bg-blue-500" },
+    { label: "Steel (high)", yield: 690, color: "bg-cyan-500" },
   ];
 
   return (
-    <div
-      style={{
-        backgroundColor: "#0c1528",
-        border: "1px solid rgba(255,255,255,0.07)",
-        borderRadius: 12,
-        padding: 24,
-      }}
-    >
-      <div style={{ fontSize: 12, fontFamily: "JetBrains Mono, monospace", color: "#334155", letterSpacing: "0.06em", marginBottom: 16 }}>
+    <div className="bg-[#0c1528] border border-white/5 rounded-xl p-6">
+      <div className="text-xs font-mono text-slate-600 tracking-wider mb-4">
         YIELD STRENGTH COMPARISON (MPa)
       </div>
       {levels.map((mat) => {
@@ -525,44 +494,35 @@ function StressBarChart({ stress }: { stress: number }) {
         const stressRatio = Math.min(Math.abs(MPa) / mat.yield, 1.5);
         const overYield = Math.abs(MPa) > mat.yield;
         return (
-          <div key={mat.label} style={{ marginBottom: 14 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "#475569", marginBottom: 4 }}>
+          <div key={mat.label} className="mb-3.5">
+            <div className="flex justify-between text-xs text-slate-500 mb-1">
               <span>{mat.label}</span>
-              <span style={{ fontFamily: "JetBrains Mono, monospace", color: overYield ? "#ef4444" : "#64748b" }}>
+              <span className={`font-mono ${overYield ? "text-red-500" : "text-slate-500"}`}>
                 σ_y = {mat.yield} MPa {overYield ? "⚠ EXCEEDS YIELD" : ""}
               </span>
             </div>
-            <div style={{ position: "relative", height: 8, backgroundColor: "#060b18", borderRadius: 4, overflow: "hidden" }}>
+            <div className="relative h-2 bg-[#060b18] rounded-full overflow-hidden">
               <div
-                style={{
-                  position: "absolute",
-                  left: 0,
-                  top: 0,
-                  height: "100%",
-                  width: `${ratio * 100}%`,
-                  backgroundColor: overYield ? "#ef4444" : mat.color,
-                  borderRadius: 4,
-                  transition: "width 0.4s ease",
-                  opacity: 0.85,
-                }}
+                className={`absolute left-0 top-0 h-full rounded-full transition-all duration-400 ease-out opacity-85 ${
+                  overYield ? "bg-red-500" : mat.color
+                }`}
+                style={{ width: `${ratio * 100}%` }}
               />
               {/* Current stress marker */}
               <div
+                className="absolute top-0 bottom-0 w-0.5 bg-amber-500"
                 style={{
-                  position: "absolute",
                   left: `${Math.min(stressRatio / 1.5, 1) * 100}%`,
-                  top: -2,
-                  bottom: -2,
-                  width: 2,
-                  backgroundColor: "#f59e0b",
+                  marginTop: -2,
+                  marginBottom: -2,
                 }}
               />
             </div>
           </div>
         );
       })}
-      <div style={{ fontSize: 11, color: "#334155", marginTop: 8 }}>
-        Applied stress: <span style={{ fontFamily: "JetBrains Mono, monospace", color: "#f59e0b" }}>{Math.abs(MPa).toFixed(2)} MPa</span>
+      <div className="text-[11px] text-slate-500 mt-2">
+        Applied stress: <span className="font-mono text-amber-500">{Math.abs(MPa).toFixed(2)} MPa</span>
       </div>
     </div>
   );
