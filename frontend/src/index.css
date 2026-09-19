@@ -4,39 +4,141 @@
 
 @import 'tailwindcss';
 
+/* ===========================================================
+   Brand tokens (Tailwind theme). These define the LIGHT
+   defaults for utility classes like bg-background, bg-primary,
+   text-foreground, etc. Dark-mode overrides for the same
+   variable names live in the .dark block below, so any
+   component using Tailwind color utilities also switches
+   correctly with the theme toggle.
+   =========================================================== */
 @theme {
   --font-display: 'DM Sans', system-ui, sans-serif;
   --font-sans: 'Inter', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 
-  --color-background: #060b18;
-  --color-foreground: #cbd5e1;
-  --color-card: #0c1528;
-  --color-card-foreground: #cbd5e1;
-  --color-primary: #3b82f6;
-  --color-primary-hover: #4c93f7;
-  --color-primary-foreground: #ffffff;
-  --color-secondary: #111e35;
-  --color-secondary-foreground: #94a3b8;
-  --color-muted: #0f1825;
-  --color-muted-foreground: #475569;
-  --color-accent: #06b6d4;
-  --color-accent-hover: #22d3ee;
-  --color-accent-foreground: #ffffff;
-  --color-border: #1a2744;
-  --color-ring: #3b82f6;
+  --color-background: #F5F7FA;
+  --color-foreground: #0B1F33;
+  --color-card: #FFFFFF;
+  --color-card-foreground: #0B1F33;
+  --color-primary: #2F5D7C;
+  --color-primary-hover: #4A7C9E;
+  --color-primary-foreground: #FFFFFF;
+  --color-secondary: #EDEFF2;
+  --color-secondary-foreground: #0B1F33;
+  --color-muted: #EDEFF2;
+  --color-muted-foreground: #64748B;
+  --color-accent: #D4A72C;
+  --color-accent-hover: #E8C465;
+  --color-accent-foreground: #0B1F33;
+  --color-border: rgba(11, 31, 51, 0.08);
+  --color-ring: #2F5D7C;
   --color-success: #22c55e;
   --color-warning: #f59e0b;
   --color-danger: #ef4444;
 
+  /* Fixed navy brand block — used for the footer, feature callouts,
+     and the sidebar's active-item pill. Stays the same in both
+     light and dark mode, like in the reference design. */
+  --color-navy: #0B1F33;
+  --color-navy-hover: #12304D;
+  --color-navy-foreground: #F5F7FA;
+
+  /* Tag / pill chips (e.g. "CAD", "Simulation") */
+  --color-tag-bg: #EEF2F6;
+  --color-tag-foreground: #2F5D7C;
+
+  /* Sidebar active nav item */
+  --color-nav-active-bg: #0B1F33;
+  --color-nav-active-foreground: #FFFFFF;
+  --color-nav-active-border: transparent;
+
   /* Glow shadows */
-  --shadow-glow-blue: 0 0 20px rgba(59, 130, 246, 0.35);
-  --shadow-glow-cyan: 0 0 20px rgba(6, 182, 212, 0.3);
-  --shadow-glow-amber: 0 0 20px rgba(245, 158, 11, 0.3);
+  --shadow-glow-blue: 0 0 20px rgba(47, 93, 124, 0.35);
+  --shadow-glow-cyan: 0 0 20px rgba(47, 93, 124, 0.3);
+  --shadow-glow-amber: 0 0 20px rgba(212, 167, 44, 0.3);
 
   /* Gradients */
-  --gradient-section-alt: linear-gradient(180deg, #0c1528 0%, #0a1222 100%);
-  --gradient-hero-glow: radial-gradient(ellipse at center, rgba(59, 130, 246, 0.15) 0%, transparent 70%);
+  --gradient-section-alt: linear-gradient(180deg, #FFFFFF 0%, #F5F7FA 100%);
+  --gradient-hero-glow: radial-gradient(ellipse at center, rgba(47, 93, 124, 0.15) 0%, transparent 70%);
+}
+
+/* Light Theme (Default Root) */
+:root {
+  --bg-page: #F5F7FA;
+  --bg-card: #FFFFFF;
+  --bg-card-sub: #EDEFF2;
+  --border-subtle: rgba(47, 93, 124, 0.18);
+  --border-card: rgba(47, 93, 124, 0.30);
+  --text-primary: #0B1F33;
+  --text-secondary: #2F5D7C;
+  --text-muted: #64748B;
+  --accent-primary: #2F5D7C;
+  --accent-secondary: #D4A72C;
+  --nav-bg: rgba(245, 247, 250, 0.88);
+  --surface-subtle: #EEF2F6;
+  --surface-strong: #FFFFFF;
+  --line-subtle: rgba(47, 93, 124, 0.18);
+  --line-card: rgba(47, 93, 124, 0.30);
+  --primary-soft: rgba(47, 93, 124, 0.10);
+  --primary-line: rgba(47, 93, 124, 0.35);
+  --dropdown-bg-rgb: 255, 255, 255;
+  --dropdown-hover-bg: rgba(47, 93, 124, 0.08);
+}
+
+/* Dark Theme */
+.dark {
+  --bg-page: #060610;
+  --bg-card: #010122ef;
+  --bg-card-sub: #0a0a30;
+  --border-subtle: rgba(212, 167, 44, 0.18);
+  --border-card: rgba(212, 167, 44, 0.30);
+  --text-primary: #FFFFFF;
+  --text-secondary: #CBD5E1;
+  --text-muted: #94A3B8;
+  --accent-primary: #5B93B5;
+  --accent-secondary: #F0D36B;
+  --nav-bg: rgba(6, 6, 16, 0.88);
+  --surface-subtle: rgba(255, 255, 255, 0.03);
+  --surface-strong: #010122ef;
+  --line-subtle: rgba(212, 167, 44, 0.18);
+  --line-card: rgba(212, 167, 44, 0.30);
+  --primary-soft: rgba(91, 147, 181, 0.12);
+  --primary-line: rgba(91, 147, 181, 0.30);
+  --dropdown-bg-rgb: 1, 1, 34;
+  --dropdown-hover-bg: rgba(212, 167, 44, 0.08);
+
+  /* Dark overrides for the Tailwind brand tokens defined in @theme */
+  --color-background: #060610;
+  --color-foreground: #FFFFFF;
+  --color-card: #010122ef;
+  --color-card-foreground: #FFFFFF;
+  --color-primary: #399bd8;
+  --color-primary-hover: #037cc7;
+  --color-primary-foreground: #FFFFFF;
+  --color-secondary: #010122ef;
+  --color-secondary-foreground: #CBD5E1;
+  --color-muted: #010122ef;
+  --color-muted-foreground: #94A3B8;
+  --color-accent: #F0D36B;
+  --color-accent-hover: #F5E08A;
+  --color-accent-foreground: #060610;
+  --color-border: rgba(255, 255, 255, 0.10);
+  --color-ring: #5B93B5;
+
+  --color-tag-bg: rgba(255, 255, 255, 0.08);
+  --color-tag-foreground: #CBD5E1;
+
+  --color-nav-active-bg: rgba(240, 211, 107, 0.12);
+  --color-nav-active-foreground: #FFFFFF;
+  --color-nav-active-border: #F0D36B;
+
+  --shadow-glow-blue: 0 0 20px rgba(91, 147, 181, 0.40);
+  --shadow-glow-cyan: 0 0 20px rgba(91, 147, 181, 0.35);
+  --shadow-glow-amber: 0 0 20px rgba(240, 211, 107, 0.35);
+
+  --gradient-section-alt: linear-gradient(180deg, #010122ef 0%, #060610 100%);
+  --gradient-hero-glow: radial-gradient(ellipse at center, rgba(91, 147, 181, 0.18) 0%, transparent 70%);
 }
 
 *,
@@ -47,7 +149,8 @@
 
 html {
   scrollbar-width: thin;
-  scrollbar-color: rgba(59, 130, 246, 0.25) transparent;
+  scrollbar-color: var(--color-primary) transparent;
+  overflow-x: clip;
 }
 
 body {
@@ -57,6 +160,8 @@ body {
   font-family: var(--font-sans);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: clip;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -75,28 +180,22 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 
 /* Utility classes used in JSX via className */
-.grid-bg {
-  background-image:
-    linear-gradient(rgba(59, 130, 246, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(59, 130, 246, 0.03) 1px, transparent 1px);
-  background-size: 48px 48px;
-}
 
 .glow-blue {
-  box-shadow: 0 0 40px rgba(59, 130, 246, 0.12), 0 0 80px rgba(59, 130, 246, 0.05);
+  box-shadow: 0 0 40px rgba(47, 93, 124, 0.12), 0 0 80px rgba(47, 93, 124, 0.05);
 }
 
 .card-border {
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  border: 1px solid var(--color-border);
 }
 
 .formula-display {
   font-family: var(--font-mono);
-  background: rgba(6, 182, 212, 0.06);
-  border: 1px solid rgba(6, 182, 212, 0.15);
+  background: rgba(47, 93, 124, 0.06);
+  border: 1px solid rgba(47, 93, 124, 0.18);
   border-radius: 8px;
   padding: 16px 24px;
-  color: #06b6d4;
+  color: var(--color-primary);
   font-size: 1.25rem;
   letter-spacing: 0.02em;
 }
@@ -115,8 +214,8 @@ input[type="number"]::-webkit-outer-spin-button {
   transition: all 0.2s ease;
 }
 .btn-secondary:hover {
-  background-color: rgba(255, 255, 255, 0.08) !important;
-  border-color: rgba(255, 255, 255, 0.2) !important;
+  background-color: rgba(128, 128, 128, 0.08) !important;
+  border-color: var(--color-border) !important;
 }
 
 .card-interactive {
@@ -124,6 +223,112 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 .card-interactive:hover {
   transform: scale(1.01) translateY(-2px);
-  border-color: rgba(59, 130, 246, 0.4) !important;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2), 0 0 15px rgba(59, 130, 246, 0.15) !important;
+  border-color: rgba(47, 93, 124, 0.4) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2), 0 0 15px rgba(47, 93, 124, 0.15) !important;
+}
+
+/* ===========================================================
+   Reference-style helpers (sidebar / hero / footer pattern
+   seen in the Mechen mock-ups): solid navy blocks, a gold
+   CTA button, small gold section labels, and tag pills.
+   =========================================================== */
+
+/* Solid navy block — footer, "About the department" callout,
+   hero overlay panel. Stays navy in both light & dark mode. */
+.navy-panel {
+  background-color: var(--color-navy);
+  color: var(--color-navy-foreground);
+}
+.navy-panel .text-muted-on-navy {
+  color: rgba(245, 247, 250, 0.7);
+}
+
+/* Gold call-to-action button (e.g. "Explore Our Programs", "Apply Now") */
+.btn-cta {
+  background-color: var(--color-accent);
+  color: var(--color-accent-foreground);
+  transition: all 0.2s ease;
+}
+.btn-cta:hover {
+  background-color: var(--color-accent-hover) !important;
+  box-shadow: var(--shadow-glow-amber) !important;
+  transform: translateY(-1px);
+}
+
+/* Small caps gold label with a short leading bar, e.g.
+   "MECHANICAL ENGINEERING", "LATEST PROJECTS" */
+.label-accent {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+}
+.label-accent::before {
+  content: '';
+  width: 20px;
+  height: 2px;
+  background-color: var(--color-accent);
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+/* Rounded tag / skill pill, e.g. "CAD", "Simulation" */
+.tag-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background-color: var(--color-tag-bg);
+  color: var(--color-tag-foreground);
+}
+
+/* Sidebar active nav item: solid navy pill in light mode,
+   subtle gold-tinted highlight with a left bar in dark mode */
+.nav-item-active {
+  background-color: var(--color-nav-active-bg);
+  color: var(--color-nav-active-foreground);
+  border-inline-start: 3px solid var(--color-nav-active-border);
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+/* Animated arrow button styles */
+.btn-with-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 100px !important;
+  transition: all 0.2s ease-in-out;
+  padding: 10px 24px;
+  font-weight: 600;
+  gap: 8px;
+}
+
+.btn-with-arrow:active {
+  transform: scale(0.95);
+}
+
+.btn-with-arrow .arrow-icon {
+  width: 28px;
+  height: 28px;
+  margin-left: 10px;
+  transition: transform 0.3s ease-in-out;
+}
+
+.btn-with-arrow:hover .arrow-icon {
+  transform: translateX(5px);
+}
+
+.btn-with-arrow.arrow-left .arrow-icon {
+  margin-left: 0;
+  margin-right: 10px;
+}
+
+.btn-with-arrow.arrow-left:hover .arrow-icon {
+  transform: scaleX(-1) translateX(5px);
 }

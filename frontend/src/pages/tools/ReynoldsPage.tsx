@@ -1,174 +1,316 @@
-import { useState, useMemo } from "react";
-import { Link } from "react-router-dom";
-import { EngineeringValue } from "../../components/EngineeringValue";
-import { useDebounce } from "../../hooks/useDebounce";
+import { useState } from "react"
+import { Link } from "react-router-dom"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import * as z from "zod"
+import { EngineeringValue } from "../../components/EngineeringValue"
+import { useDebounce } from "../../hooks/useDebounce"
+import { useReynoldsCalculator } from "../../hooks/useReynoldsCalculator"
+import type { ReynoldsInput } from "../../api/calculators"
+import { AxiosError } from "axios"
 
 const fluidPresets = [
-  { name: "Water (20°C)", rho: 998.2, mu: 0.001002 },
   { name: "Air (20°C)", rho: 1.204, mu: 0.00001825 },
   { name: "Engine Oil", rho: 870, mu: 0.1 },
   { name: "Glycerol (25°C)", rho: 1261, mu: 0.954 },
   { name: "Mercury (20°C)", rho: 13546, mu: 0.00157 },
-];
+  { name: "Water (20°C)", rho: 998.2, mu: 0.001002 },
+]
 
-interface Inputs {
-  rho: string;
-  v: string;
-  D: string;
-  mu: string;
-}
+const formSchema = z.object({
+  rho: z.coerce.number().positive("Must be positive"),
+  v: z.coerce
+    .number()
+    .refine((val) => val !== 0, { message: "Must be nonzero" }),
+  D: z.coerce.number().positive("Must be positive"),
+  mu: z.coerce.number().positive("Must be positive"),
+})
 
-function getFlowRegime(Re: number): {
-  label: string;
-  description: string;
-  color: string;
-  border: string;
-  bg: string;
-  critical: string;
+type FormValues = z.infer<typeof formSchema>
+
+function getFlowRegimeUI(
+  regime: string,
+): {
+  label: string
+  description: string
+  color: string
+  border: string
+  bg: string
 } {
-  if (Re < 2300)
+  if (regime === "laminar")
     return {
       label: "Laminar",
-      description: "Smooth, ordered flow. Fluid moves in parallel layers with no disruption between them.",
+      description:
+        "Smooth, ordered flow. Fluid moves in parallel layers with no disruption between them.",
       color: "text-green-500",
       border: "border-green-500",
       bg: "bg-green-500",
-      critical: "Re < 2300",
-    };
-  if (Re < 4000)
+    }
+  if (regime === "transitional")
     return {
       label: "Transitional",
-      description: "Unstable flow between laminar and turbulent. Neither regime is fully established.",
-      color: "text-amber-500",
+      description:
+        "Unstable flow between laminar and turbulent. Neither regime is fully established.",
+      color: "text-accent",
       border: "border-amber-500",
       bg: "bg-amber-500",
-      critical: "2300 ≤ Re < 4000",
-    };
+    }
   return {
     label: "Turbulent",
-    description: "Chaotic, irregular flow with eddies and mixing across the pipe cross-section.",
+    description:
+      "Chaotic, irregular flow with eddies and mixing across the pipe cross-section.",
     color: "text-red-500",
     border: "border-red-500",
     bg: "bg-red-500",
-    critical: "Re ≥ 4000",
-  };
+  }
 }
 
 export default function ReynoldsPage() {
-  const [inputs, setInputs] = useState<Inputs>({ rho: "998.2", v: "2.5", D: "0.05", mu: "0.001002" });
-  const [selectedFluid, setSelectedFluid] = useState(0);
+  const [selectedFluid, setSelectedFluid] = useState<number | "custom">(4)
 
-  const debouncedInputs = useDebounce(inputs, 300);
+  const {
+    register,
+    watch,
+    setValue,
+    formState: { errors: formErrors, isValid },
+  } = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: { rho: 998.2, v: 2.5, D: 0.05, mu: 0.001002 },
+    mode: "onChange",
+  })
 
-  const Re = useMemo(() => {
-    const rho = parseFloat(debouncedInputs.rho);
-    const v = parseFloat(debouncedInputs.v);
-    const D = parseFloat(debouncedInputs.D);
-    const mu = parseFloat(debouncedInputs.mu);
-    if ([rho, v, D, mu].some(isNaN) || mu <= 0 || D <= 0 || rho <= 0 || v <= 0) return null;
-    return (rho * v * D) / mu;
-  }, [debouncedInputs]);
+  const currentValues = watch()
+  const debouncedValues = useDebounce(currentValues, 300)
 
-  const regime = Re !== null ? getFlowRegime(Re) : null;
+  const apiInput: ReynoldsInput = {
+    density: Number(debouncedValues.rho),
+    velocity: Number(debouncedValues.v),
+    diameter: Number(debouncedValues.D),
+    dynamic_viscosity: Number(debouncedValues.mu),
+  }
 
-  const setInput = (key: keyof Inputs) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    setInputs((prev) => ({ ...prev, [key]: e.target.value }));
-  };
+  const {
+    data: result,
+    isFetching,
+    error: apiError,
+  } = useReynoldsCalculator(apiInput, isValid)
+
+  let backendErrors: Record<string, string[]> = {}
+  let serverDown = false
+  if (apiError instanceof AxiosError) {
+    if (apiError.response && apiError.response.status === 400) {
+      backendErrors = (apiError.response.data as Record<string, string[]>)
+    } else if (!apiError.response || apiError.response.status >= 500) {
+      serverDown = true
+    }
+  }
+
+  const getError = (field: keyof FormValues | string) => {
+    if (field in formErrors && formErrors[(field as keyof FormValues)]) {
+      return formErrors[(field as keyof FormValues)]?.message
+    }
+    if (field === "rho" && backendErrors["density"])
+      return backendErrors["density"][0]
+    if (field === "mu" && backendErrors["dynamic_viscosity"])
+      return backendErrors["dynamic_viscosity"][0]
+    if (field === "v" && backendErrors["velocity"])
+      return backendErrors["velocity"][0]
+    if (field === "D" && backendErrors["diameter"])
+      return backendErrors["diameter"][0]
+    if (field === "viscosity" && backendErrors["viscosity"])
+      return backendErrors["viscosity"][0]
+    return null
+  }
+
+  const Re = result ? result.reynolds_number : null
+  const regime = result ? getFlowRegimeUI(result.regime) : null
 
   const applyPreset = (i: number) => {
-    const p = fluidPresets[i];
-    setSelectedFluid(i);
-    setInputs((prev) => ({ ...prev, rho: String(p.rho), mu: String(p.mu) }));
-  };
+    const p = fluidPresets[i]
+    setSelectedFluid(i)
+    setValue("rho", p.rho, { shouldValidate: true })
+    setValue("mu", p.mu, { shouldValidate: true })
+  }
+
+  const applyCustom = () => {
+    setSelectedFluid("custom")
+    setValue("rho", "" as any, { shouldValidate: true })
+    setValue("mu", "" as any, { shouldValidate: true })
+  }
 
   return (
-    <div className="max-w-7xl mx-auto py-12 px-6">
+    <div className="mx-auto max-w-7xl px-6 py-12">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 mb-8 text-[13px] text-slate-600">
-        <Link to="/tools" className="text-slate-500 hover:text-slate-400 no-underline transition-colors">Tools</Link>
+      <div className="mb-8 flex items-center gap-2 text-[13px] text-slate-600">
+        <Link
+          to="/tools"
+          className="text-slate-500 no-underline transition-colors hover:text-slate-400"
+        >
+          Tools
+        </Link>
         <span>→</span>
         <span className="text-slate-400">Reynolds Number</span>
       </div>
 
       <div className="mb-9">
-        <div className="text-[11px] font-mono text-cyan-500 tracking-[0.08em] mb-2.5">
+        <div className="mb-2.5 flex items-center gap-3 font-mono text-[11px] tracking-[0.08em] text-primary">
           FLUIDS · PIPE FLOW
+          {isFetching && (
+            <span className="inline-flex items-center gap-1.5 text-cyan-400/70">
+              <span className="animate-ping rounded-full bg-cyan-400/70 h-1.5 w-1.5"></span>
+              calculating
+            </span>
+          )}
         </div>
-        <h1 className="font-display text-[clamp(1.5rem,3vw,2rem)] font-bold text-slate-100 mb-2.5 tracking-tight">
+        <h1 className="mb-2.5 font-display text-[clamp(1.5rem,3vw,2rem)] font-bold tracking-tight text-slate-100">
           Reynolds Number Calculator
         </h1>
-        <p className="text-[15px] text-slate-500 m-0">
-          Determine the flow regime — laminar, transitional, or turbulent — for pipe flow.
+        <p className="m-0 text-[15px] text-slate-500">
+          Determine the flow regime — laminar, transitional, or turbulent — for
+          pipe flow.
         </p>
       </div>
 
       {/* Formula */}
-      <div className="flex gap-3 mb-8 flex-wrap">
-        <div className="py-2 px-4 bg-[#0c1528] border border-white/5 rounded-md font-mono text-[15px] text-cyan-500">
+      <div className="mb-8 flex flex-wrap gap-3">
+        <div className="rounded-md border border-white/5 bg-card px-4 py-2 font-mono text-[15px] text-primary">
           Re = ρ · v · D / μ
         </div>
-        <div className="py-2 px-4 bg-[#0c1528] border border-white/5 rounded-md font-mono text-[13px] text-cyan-500 flex items-center">
+        <div className="flex items-center rounded-md border border-white/5 bg-card px-4 py-2 font-mono text-[13px] text-primary">
           ν = μ / ρ &nbsp;&nbsp; Re = v · D / ν
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {serverDown && (
+        <div className="mb-6 rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-400">
+          Cannot connect to calculation engine. Please ensure the backend is
+          running.
+        </div>
+      )}
+      {getError("viscosity") && (
+        <div className="mb-6 rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-400">
+          {getError("viscosity")}
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Left: inputs */}
         <div className="flex flex-col gap-4">
           {/* Fluid presets */}
-          <div className="bg-[#0c1528] border border-white/5 rounded-xl p-6">
-            <div className="text-xs font-mono text-slate-600 tracking-wider mb-3.5">
+          <div className="rounded-xl border border-white/5 bg-card p-6">
+            <div className="mb-3.5 font-mono text-xs tracking-wider text-slate-600">
               FLUID PRESETS
             </div>
-            <div className="flex flex-col gap-1.5">
-              {fluidPresets.map((f, i) => (
-                <button
-                  key={f.name}
-                  onClick={() => applyPreset(i)}
-                  className={`py-2 px-3.5 text-left rounded-md cursor-pointer flex items-center justify-between border transition-all focus:outline-none ${
-                    selectedFluid === i
-                      ? "bg-cyan-500/10 border-cyan-500/50 text-cyan-500 shadow-[0_0_15px_rgba(6,182,212,0.2)]"
-                      : "bg-white/5 border-white/5 text-slate-500 hover:bg-cyan-500/5 hover:border-cyan-500/30 hover:text-cyan-400 hover:shadow-[0_0_10px_rgba(6,182,212,0.1)]"
-                  }`}
+            <div className="flex gap-2">
+              <select
+                value={selectedFluid === "custom" ? "custom" : selectedFluid}
+                onChange={(e) => {
+                  if (e.target.value === "custom") applyCustom()
+                  else applyPreset(Number(e.target.value))
+                }}
+                className={`flex-1 cursor-pointer appearance-none rounded-md border px-3.5 py-2 text-[13px] outline-none transition-all ${
+                  selectedFluid !== "custom"
+                    ? "border-cyan-500/50 bg-cyan-500/10 text-primary shadow-[0_0_15px_rgba(6,182,212,0.2)]"
+                    : "border-white/5 bg-white/5 text-slate-400 hover:border-cyan-500/30 hover:bg-cyan-500/5 focus:border-cyan-500/50"
+                }`}
+              >
+                <option
+                  value="custom"
+                  disabled
+                  className="bg-card text-slate-400"
                 >
-                  <span className="text-[13px]">{f.name}</span>
-                  <span className="font-mono text-[11px] opacity-70">
-                    μ={f.mu} Pa·s
-                  </span>
-                </button>
-              ))}
+                  Select a fluid preset...
+                </option>
+                {fluidPresets.map((f, i) => (
+                  <option
+                    key={f.name}
+                    value={i}
+                    className="bg-card text-slate-200"
+                  >
+                    {f.name} (μ={f.mu})
+                  </option>
+                ))}
+              </select>
+
+              <button
+                onClick={applyCustom}
+                className={`flex cursor-pointer items-center justify-center whitespace-nowrap rounded-md border px-4 py-2 text-[13px] transition-all focus:outline-none ${
+                  selectedFluid === "custom"
+                    ? "border-cyan-500/50 bg-cyan-500/10 text-primary shadow-[0_0_15px_rgba(6,182,212,0.2)]"
+                    : "border-white/5 bg-white/5 text-slate-500 hover:border-cyan-500/30 hover:bg-cyan-500/5 hover:text-cyan-400"
+                }`}
+              >
+                Custom
+              </button>
             </div>
           </div>
 
           {/* Parameters */}
-          <div className="bg-[#0c1528] border border-white/5 rounded-xl p-6">
-            <div className="text-xs font-mono text-slate-600 tracking-wider mb-4">
+          <div className="rounded-xl border border-white/5 bg-card p-6">
+            <div className="mb-4 font-mono text-xs tracking-wider text-slate-600">
               FLOW PARAMETERS
             </div>
             <div className="flex flex-col gap-3.5">
               {([
-                { key: "rho", sym: "ρ", label: "Fluid Density", unit: "kg/m³", placeholder: "e.g. 998.2" },
-                { key: "v", sym: "v", label: "Mean Velocity", unit: "m/s", placeholder: "e.g. 2.5" },
-                { key: "D", sym: "D", label: "Pipe Diameter", unit: "m", placeholder: "e.g. 0.05" },
-                { key: "mu", sym: "μ", label: "Dynamic Viscosity", unit: "Pa·s", placeholder: "e.g. 0.001002" },
+                {
+                  key: "rho",
+                  sym: "ρ",
+                  label: "Fluid Density",
+                  unit: "kg/m³",
+                  placeholder: "e.g. 998.2",
+                },
+                {
+                  key: "v",
+                  sym: "v",
+                  label: "Mean Velocity",
+                  unit: "m/s",
+                  placeholder: "e.g. 2.5",
+                },
+                {
+                  key: "D",
+                  sym: "D",
+                  label: "Pipe Diameter",
+                  unit: "m",
+                  placeholder: "e.g. 0.05",
+                },
+                {
+                  key: "mu",
+                  sym: "μ",
+                  label: "Dynamic Viscosity",
+                  unit: "Pa·s",
+                  placeholder: "e.g. 0.001002",
+                },
               ] as const).map((f) => (
                 <div key={f.key}>
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <span className="font-mono text-sm text-cyan-500 min-w-[20px]">{f.sym}</span>
+                  <div className="mb-1.5 flex items-center gap-2">
+                    <span className="min-w-[20px] font-mono text-sm text-primary">
+                      {f.sym}
+                    </span>
                     <span className="text-xs text-slate-500">{f.label}</span>
                   </div>
-                  <div className="flex border border-white/10 rounded-lg overflow-hidden bg-[#060b18] focus-within:ring-1 focus-within:ring-cyan-500/50 transition-colors">
+                  <div
+                    className={`flex overflow-hidden rounded-lg border transition-colors ${
+                      getError(f.key)
+                        ? "border-red-500/50 bg-red-500/5 focus-within:ring-1 focus-within:ring-red-500/50"
+                        : "border-white/10 bg-secondary focus-within:ring-1 focus-within:ring-cyan-500/50"
+                    }`}
+                  >
                     <input
                       type="number"
-                      value={inputs[f.key]}
-                      onChange={setInput(f.key)}
+                      step="any"
+                      {...register(f.key as keyof FormValues)}
                       placeholder={f.placeholder}
-                      className="flex-1 py-2.5 px-3 bg-transparent border-none text-slate-200 text-sm font-mono outline-none"
+                      className="flex-1 border-none bg-transparent px-3 py-2.5 font-mono text-sm text-slate-200 outline-none"
                     />
-                    <div className="py-2.5 px-3 border-l border-white/5 text-[11px] font-mono text-slate-500 bg-white/5 whitespace-nowrap flex items-center">
+                    <div className="flex items-center whitespace-nowrap border-l border-white/5 bg-white/5 px-3 py-2.5 font-mono text-[11px] text-slate-500">
                       {f.unit}
                     </div>
                   </div>
+                  {getError(f.key) && (
+                    <div className="ml-1 mt-1.5 text-[11px] text-red-400">
+                      {getError(f.key)}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -177,17 +319,19 @@ export default function ReynoldsPage() {
 
         {/* Right: result */}
         <div className="flex flex-col gap-4">
-          {Re !== null && regime ? (
+          {Re !== null && regime && result ? (
             <>
               {/* Main Re result */}
               <div
-                className={`bg-[#0c1528] border border-white/5 rounded-xl p-8 text-center border-t-[3px] ${regime.border}`}
+                className={`rounded-xl border border-white/5 border-t-[3px] bg-card p-8 text-center ${regime.border} transition-opacity duration-300 ${
+                  isFetching ? "opacity-60" : "opacity-100"
+                }`}
                 style={{ borderTopColor: regime.border }}
               >
-                <div className="text-[11px] font-mono text-slate-500 tracking-widest mb-4">
+                <div className="mb-4 font-mono text-[11px] tracking-widest text-slate-500">
                   REYNOLDS NUMBER
                 </div>
-                <div className="font-mono text-[clamp(2.5rem,6vw,4rem)] font-bold text-slate-100 tracking-tight leading-none mb-2 overflow-hidden flex justify-center w-full">
+                <div className="mb-2 flex w-full justify-center overflow-hidden font-mono text-[clamp(2.5rem,6vw,4rem)] font-bold leading-none tracking-tight text-slate-100">
                   <EngineeringValue
                     value={Re}
                     unit=""
@@ -195,49 +339,67 @@ export default function ReynoldsPage() {
                     valueClassName="text-[clamp(1.5rem,4vw,3.5rem)]"
                   />
                 </div>
-                <div className="text-xs text-slate-500 mb-6">dimensionless</div>
+                <div className="mb-6 text-xs text-slate-500">dimensionless</div>
 
                 {/* Flow regime badge */}
                 <div
-                  className={`inline-flex items-center gap-2 py-2 px-5 rounded-full border ${regime.border} bg-white/5 border-opacity-30`}
+                  className={`inline-flex items-center gap-2 rounded-full border px-5 py-2 ${regime.border} border-opacity-30 bg-white/5`}
                 >
-                  <span className={`w-2 h-2 rounded-full ${regime.bg}`} />
-                  <span className={`font-display text-lg font-bold ${regime.color}`}>
+                  <span className={`rounded-full ${regime.bg} h-2 w-2`} />
+                  <span
+                    className={`font-display text-lg font-bold ${regime.color}`}
+                  >
                     {regime.label} Flow
                   </span>
                 </div>
 
-                <p className="text-sm text-slate-500 leading-relaxed mt-4 mb-0 mx-auto max-w-sm">
+                <p className="mx-auto mb-0 mt-4 max-w-sm text-sm leading-relaxed text-slate-500">
                   {regime.description}
                 </p>
               </div>
 
               {/* Flow regime scale */}
-              <div className="bg-[#0c1528] border border-white/5 rounded-xl p-6">
-                <div className="text-xs font-mono text-slate-600 tracking-wider mb-4">
+              <div className="rounded-xl border border-white/5 bg-card p-6">
+                <div className="mb-4 font-mono text-xs tracking-wider text-slate-600">
                   FLOW REGIME SCALE
                 </div>
-                <FlowRegimeScale Re={Re} />
+                <FlowRegimeScale Re={Re} regime={result.regime} />
               </div>
 
               {/* Summary table */}
-              <div className="bg-[#0c1528] border border-white/5 rounded-xl p-6">
-                <div className="text-xs font-mono text-slate-600 tracking-wider mb-4">
+              <div className="rounded-xl border border-white/5 bg-card p-6">
+                <div className="mb-4 font-mono text-xs tracking-wider text-slate-600">
                   COMPUTED VALUES
                 </div>
                 <div className="flex flex-col gap-1">
                   {[
-                    { label: "Reynolds Number", val: <EngineeringValue value={Re} unit="" precision={1} valueClassName="inline" />, sym: "Re" },
-                    { label: "Kinematic Viscosity", val: <EngineeringValue value={parseFloat(debouncedInputs.mu) / parseFloat(debouncedInputs.rho)} unit="" precision={4} valueClassName="inline" />, sym: "ν", unit: "m²/s" },
-                    { label: "Flow Regime", val: regime.label, sym: "—", colored: regime.color },
-                    { label: "Critical Re Range", val: regime.critical, sym: "—" },
+                    {
+                      label: "Reynolds Number",
+                      val: (
+                        <EngineeringValue
+                          value={Re}
+                          unit=""
+                          precision={1}
+                          valueClassName="inline"
+                        />
+                      ),
+                      sym: "Re",
+                    },
+                    {
+                      label: "Flow Regime",
+                      val: regime.label,
+                      sym: "—",
+                      colored: regime.color,
+                    },
                   ].map((r) => (
                     <div
                       key={r.sym + r.label}
-                      className="flex justify-between items-center py-2 border-b border-white/5 text-[13px] last:border-0"
+                      className="flex items-center justify-between border-b border-white/5 py-2 text-[13px] last:border-0"
                     >
                       <span className="text-slate-500">{r.label}</span>
-                      <span className={`font-mono font-semibold ${r.colored ?? "text-slate-200"}`}>
+                      <span
+                        className={`font-mono font-semibold ${r.colored ?? "text-slate-200"}`}
+                      >
                         {r.val} {r.unit ?? ""}
                       </span>
                     </div>
@@ -246,56 +408,73 @@ export default function ReynoldsPage() {
               </div>
             </>
           ) : (
-            <div className="bg-[#0c1528] border border-white/5 rounded-xl p-10 flex items-center justify-center text-slate-500 text-sm h-full min-h-[200px]">
-              Enter valid positive values to compute Re.
+            <div className="flex h-full min-h-[200px] items-center justify-center rounded-xl border border-white/5 bg-card p-10 text-sm text-slate-500">
+              Enter valid inputs to compute Re.
             </div>
           )}
         </div>
       </div>
     </div>
-  );
+  )
 }
 
-function FlowRegimeScale({ Re }: { Re: number }) {
-  const maxRe = Math.max(Re * 1.3, 6000);
-  const laminarEnd = 2300 / maxRe;
-  const transEnd = 4000 / maxRe;
-  const rePos = Math.min(Re / maxRe, 0.98);
+function FlowRegimeScale({ Re, regime }: { Re: number; regime: string }) {
+  const blocks = [
+    {
+      key: "laminar",
+      label: "Laminar",
+      color: "bg-green-500",
+      text: "text-green-500",
+    },
+    {
+      key: "transitional",
+      label: "Transitional",
+      color: "bg-amber-500",
+      text: "text-accent",
+    },
+    {
+      key: "turbulent",
+      label: "Turbulent",
+      color: "bg-red-500",
+      text: "text-red-500",
+    },
+  ]
 
   return (
     <div>
-      {/* Bar */}
-      <div className="relative h-6 rounded-full overflow-hidden mb-2">
-        <div className="absolute left-0 top-0 bottom-0 bg-green-500" style={{ width: `${laminarEnd * 100}%` }} />
-        <div className="absolute top-0 bottom-0 bg-amber-500" style={{ left: `${laminarEnd * 100}%`, width: `${(transEnd - laminarEnd) * 100}%` }} />
-        <div className="absolute top-0 bottom-0 right-0 bg-red-500" style={{ left: `${transEnd * 100}%` }} />
-        {/* Marker */}
-        <div
-          className="absolute bg-white rounded-sm shadow-[0_0_8px_rgba(255,255,255,0.5)]"
-          style={{
-            left: `${rePos * 100}%`,
-            top: -4,
-            bottom: -4,
-            width: 3,
-          }}
-        />
+      <div className="mb-2 flex h-6 overflow-hidden rounded-full">
+        {blocks.map((b) => (
+          <div
+            key={b.key}
+            className={`flex-1 transition-all ${
+              regime === b.key ? b.color : "bg-white/5 opacity-50"
+            }`}
+          />
+        ))}
+      </div>
+      <div className="mt-1.5 flex justify-between px-4 font-mono text-[11px]">
+        {blocks.map((b) => (
+          <span
+            key={b.key}
+            className={regime === b.key ? b.text : "text-slate-500"}
+          >
+            {b.label}
+          </span>
+        ))}
       </div>
 
-      {/* Labels */}
-      <div className="flex justify-between text-[11px] font-mono text-slate-500 mt-1.5">
-        <span>0</span>
-        <span className="text-green-500">Laminar ≤ 2300</span>
-        <span className="text-amber-500">Trans.</span>
-        <span className="text-red-500">Turbulent ≥ 4000</span>
-        <span>{(maxRe / 1000).toFixed(0)}k</span>
-      </div>
-
-      <div className="mt-3 text-xs text-slate-500 flex items-center gap-1">
+      <div className="mt-3 flex items-center gap-1 text-xs text-slate-500">
         Current:{" "}
-        <span className="font-mono text-slate-200 font-semibold flex items-center gap-1">
-          Re = <EngineeringValue value={Re} unit="" precision={0} valueClassName="text-xs" />
+        <span className="flex items-center gap-1 font-mono font-semibold text-slate-200">
+          Re ={" "}
+          <EngineeringValue
+            value={Re}
+            unit=""
+            precision={0}
+            valueClassName="text-xs"
+          />
         </span>
       </div>
     </div>
-  );
+  )
 }
